@@ -3,11 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { Plus, X, ArrowRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
-const STATO_COLORS: Record<string, string> = {
-  PIANIFICATA: "bg-yellow-100 text-yellow-800",
-  IN_CORSO: "bg-blue-100 text-blue-800",
-  CONCLUSA: "bg-green-100 text-green-800",
+const STATO_VARIANT: Record<string, "warning" | "default" | "success"> = {
+  PIANIFICATA: "warning",
+  IN_CORSO: "default",
+  CONCLUSA: "success",
 };
 
 export default function AulePage() {
@@ -30,8 +37,6 @@ export default function AulePage() {
       if (filterStato) params.stato = filterStato;
       const res = await axios.get("/api/aule", { params });
       setAule(res.data.aule || []);
-    } catch (error) {
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -49,105 +54,100 @@ export default function AulePage() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="text-muted-foreground">Loading...</div>;
 
   return (
     <div className="max-w-6xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Aule</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Aule</h1>
+          <p className="text-sm text-muted-foreground">Gestione aule, calendario, docenti</p>
+        </div>
+        <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"}>
+          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showForm ? "Annulla" : "Nuova Aula"}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="grid grid-cols-3 gap-4">
-            <select
-              value={form.corsoCodec}
-              onChange={(e) => setForm({ ...form, corsoCodec: e.target.value })}
-              className="border px-3 py-2 rounded"
-              required
-            >
-              <option value="">Seleziona corso</option>
-              {corsi.map((c) => (
-                <option key={c.codice} value={c.codice}>{c.titolo}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Luogo"
-              value={form.luogo}
-              onChange={(e) => setForm({ ...form, luogo: e.target.value })}
-              className="border px-3 py-2 rounded"
-              required
-            />
-            <input
-              type="date"
-              value={form.dataInizio}
-              onChange={(e) => setForm({ ...form, dataInizio: e.target.value })}
-              className="border px-3 py-2 rounded"
-            />
-          </div>
-          <button type="submit" className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-            Crea Aula
-          </button>
-        </form>
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <form onSubmit={handleCreate} className="grid grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label>Corso</Label>
+                <select
+                  value={form.corsoCodec}
+                  onChange={(e) => setForm({ ...form, corsoCodec: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                  required
+                >
+                  <option value="">Seleziona corso</option>
+                  {corsi.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Luogo</Label>
+                <Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Data Inizio</Label>
+                <Input type="date" value={form.dataInizio} onChange={(e) => setForm({ ...form, dataInizio: e.target.value })} />
+              </div>
+              <Button type="submit" variant="success" className="col-span-3">
+                Crea Aula
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
       <div className="flex gap-2 mb-4">
         {["", "PIANIFICATA", "IN_CORSO", "CONCLUSA"].map((s) => (
-          <button
+          <Button
             key={s}
+            size="sm"
+            variant={filterStato === s ? "default" : "outline"}
             onClick={() => setFilterStato(s)}
-            className={`px-3 py-1 rounded text-sm ${filterStato === s ? "bg-blue-600 text-white" : "bg-gray-100"}`}
           >
             {s || "Tutte"}
-          </button>
+          </Button>
         ))}
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Corso</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Luogo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Stato</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Discenti</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Docenti</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Data Inizio</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {aule.map((a) => (
-              <tr key={a.id} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-3 text-sm">{a.corso?.titolo}</td>
-                <td className="px-6 py-3 text-sm">{a.luogo}</td>
-                <td className="px-6 py-3 text-sm">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${STATO_COLORS[a.stato]}`}>
-                    {a.stato}
-                  </span>
-                </td>
-                <td className="px-6 py-3 text-sm">{a.iscrizioni?.length || 0}</td>
-                <td className="px-6 py-3 text-sm">{a.docentilezioni?.length || 0}</td>
-                <td className="px-6 py-3 text-sm">
-                  {a.dataInizio ? new Date(a.dataInizio).toLocaleDateString("it-IT") : "-"}
-                </td>
-                <td className="px-6 py-3 text-sm">
-                  <Link href={`/modulo-3/aule/${a.id}`} className="text-blue-600 hover:text-blue-800">
-                    Apri →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Corso</TableHead>
+            <TableHead>Luogo</TableHead>
+            <TableHead>Stato</TableHead>
+            <TableHead>Discenti</TableHead>
+            <TableHead>Docenti</TableHead>
+            <TableHead>Data Inizio</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {aule.map((a) => (
+            <TableRow key={a.id}>
+              <TableCell className="font-medium">{a.corso?.titolo}</TableCell>
+              <TableCell>{a.luogo}</TableCell>
+              <TableCell>
+                <Badge variant={STATO_VARIANT[a.stato]}>{a.stato}</Badge>
+              </TableCell>
+              <TableCell>{a.iscrizioni?.length || 0}</TableCell>
+              <TableCell>{a.docentilezioni?.length || 0}</TableCell>
+              <TableCell>{a.dataInizio ? new Date(a.dataInizio).toLocaleDateString("it-IT") : "-"}</TableCell>
+              <TableCell>
+                <Link href={`/modulo-3/aule/${a.id}`}>
+                  <Button variant="ghost" size="sm">
+                    Apri <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

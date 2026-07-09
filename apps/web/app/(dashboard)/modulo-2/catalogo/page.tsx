@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Plus, X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export default function CatalogoPage() {
   const [corsi, setCorsi] = useState<any[]>([]);
@@ -35,14 +42,7 @@ export default function CatalogoPage() {
     e.preventDefault();
     try {
       await axios.post("/api/corsi", newCorso);
-      setNewCorso({
-        codice: "",
-        titolo: "",
-        tipo: "FORMAZIONE",
-        oreAula: 8,
-        oreElearning: 0,
-        validitaAnni: 1,
-      });
+      setNewCorso({ codice: "", titolo: "", tipo: "FORMAZIONE", oreAula: 8, oreElearning: 0, validitaAnni: 1 });
       setShowForm(false);
       loadCorsi();
     } catch (error) {
@@ -50,130 +50,90 @@ export default function CatalogoPage() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="text-muted-foreground">Loading...</div>;
 
   return (
     <div className="max-w-4xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Catalogo Corsi</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Catalogo Corsi</h1>
+          <p className="text-sm text-muted-foreground">Gestione corsi di formazione</p>
+        </div>
+        <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"}>
+          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showForm ? "Annulla" : "Nuovo Corso"}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <form
-          onSubmit={handleCreateCorso}
-          className="bg-white rounded-lg shadow p-6 mb-6"
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Codice"
-              value={newCorso.codice}
-              onChange={(e) =>
-                setNewCorso({ ...newCorso, codice: e.target.value })
-              }
-              className="border px-3 py-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Titolo"
-              value={newCorso.titolo}
-              onChange={(e) =>
-                setNewCorso({ ...newCorso, titolo: e.target.value })
-              }
-              className="border px-3 py-2 rounded"
-              required
-            />
-            <select
-              value={newCorso.tipo}
-              onChange={(e) =>
-                setNewCorso({ ...newCorso, tipo: e.target.value })
-              }
-              className="border px-3 py-2 rounded"
-            >
-              <option value="FORMAZIONE">Formazione</option>
-              <option value="AGGIORNAMENTO">Aggiornamento</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Ore Aula"
-              value={newCorso.oreAula}
-              onChange={(e) =>
-                setNewCorso({
-                  ...newCorso,
-                  oreAula: parseInt(e.target.value),
-                })
-              }
-              className="border px-3 py-2 rounded"
-              required
-            />
-            <input
-              type="number"
-              placeholder="Ore E-learning"
-              value={newCorso.oreElearning}
-              onChange={(e) =>
-                setNewCorso({
-                  ...newCorso,
-                  oreElearning: parseInt(e.target.value),
-                })
-              }
-              className="border px-3 py-2 rounded"
-            />
-            <input
-              type="number"
-              placeholder="Validità (anni)"
-              value={newCorso.validitaAnni}
-              onChange={(e) =>
-                setNewCorso({
-                  ...newCorso,
-                  validitaAnni: parseInt(e.target.value),
-                })
-              }
-              className="border px-3 py-2 rounded"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-          >
-            Crea Corso
-          </button>
-        </form>
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <form onSubmit={handleCreateCorso} className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Codice</Label>
+                <Input value={newCorso.codice} onChange={(e) => setNewCorso({ ...newCorso, codice: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Titolo</Label>
+                <Input value={newCorso.titolo} onChange={(e) => setNewCorso({ ...newCorso, titolo: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tipo</Label>
+                <select
+                  value={newCorso.tipo}
+                  onChange={(e) => setNewCorso({ ...newCorso, tipo: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                >
+                  <option value="FORMAZIONE">Formazione</option>
+                  <option value="AGGIORNAMENTO">Aggiornamento</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Ore Aula</Label>
+                <Input type="number" value={newCorso.oreAula} onChange={(e) => setNewCorso({ ...newCorso, oreAula: parseInt(e.target.value) })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Ore E-learning</Label>
+                <Input type="number" value={newCorso.oreElearning} onChange={(e) => setNewCorso({ ...newCorso, oreElearning: parseInt(e.target.value) })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Validità (anni)</Label>
+                <Input type="number" value={newCorso.validitaAnni} onChange={(e) => setNewCorso({ ...newCorso, validitaAnni: parseInt(e.target.value) })} required />
+              </div>
+              <Button type="submit" variant="success" className="col-span-2">
+                Crea Corso
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Codice</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Titolo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Tipo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Ore Aula</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Ore E-learning</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Validità</th>
-            </tr>
-          </thead>
-          <tbody>
-            {corsi.map((corso) => (
-              <tr key={corso.codice} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-3 text-sm font-mono">{corso.codice}</td>
-                <td className="px-6 py-3 text-sm">{corso.titolo}</td>
-                <td className="px-6 py-3 text-sm">{corso.tipo}</td>
-                <td className="px-6 py-3 text-sm">{corso.oreAula}</td>
-                <td className="px-6 py-3 text-sm">{corso.oreElearning}</td>
-                <td className="px-6 py-3 text-sm">{corso.validitaAnni} anni</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Codice</TableHead>
+            <TableHead>Titolo</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Ore Aula</TableHead>
+            <TableHead>Ore E-learning</TableHead>
+            <TableHead>Validità</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {corsi.map((corso) => (
+            <TableRow key={corso.codice}>
+              <TableCell className="font-mono text-xs">{corso.codice}</TableCell>
+              <TableCell className="font-medium">{corso.titolo}</TableCell>
+              <TableCell>
+                <Badge variant={corso.tipo === "FORMAZIONE" ? "default" : "warning"}>{corso.tipo}</Badge>
+              </TableCell>
+              <TableCell>{corso.oreAula}h</TableCell>
+              <TableCell>{corso.oreElearning}h</TableCell>
+              <TableCell>{corso.validitaAnni} anni</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
