@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { LogOut } from "lucide-react";
 import { type SessionUser } from "@gestionale/types";
+import { Button } from "@/components/ui/button";
 
 interface UserMenuProps {
   user: SessionUser;
@@ -20,18 +22,21 @@ export function UserMenu({ user }: UserMenuProps) {
     }
   };
 
+  const initials = `${user.nome?.[0] || ""}${user.cognome?.[0] || ""}`.toUpperCase() || user.email[0].toUpperCase();
+
   return (
-    <div className="flex items-center space-x-4">
-      <div className="text-right text-sm">
-        <p className="font-medium">{user.nome} {user.cognome}</p>
-        <p className="text-gray-500 text-xs">{user.email}</p>
+    <div className="flex items-center gap-3">
+      <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+        {initials}
       </div>
-      <button
-        onClick={handleLogout}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-      >
+      <div className="text-right text-sm hidden sm:block">
+        <p className="font-medium text-foreground">{user.nome} {user.cognome}</p>
+        <p className="text-muted-foreground text-xs">{user.email}</p>
+      </div>
+      <Button variant="outline" size="sm" onClick={handleLogout}>
+        <LogOut className="h-4 w-4" />
         Logout
-      </button>
+      </Button>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { Loader2 } from "lucide-react";
 import { type SessionUser } from "@gestionale/types";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -77,19 +78,19 @@ export default function DashboardLayout({
 
   if (loading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Loading...</p>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-secondary/30">
       <Sidebar user={user} modules={modules} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Gestionale Formazione</h1>
+        <header className="bg-card border-b border-border px-6 py-3.5 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-foreground">Gestionale Formazione</h1>
           <UserMenu user={user} />
         </header>
 
