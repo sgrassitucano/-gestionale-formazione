@@ -1,0 +1,56 @@
+{
+  "$schema": "https://turbo.build/json-schema.json",
+  "version": "2",
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "interactive": true
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**", "build/**"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "lint": {
+      "cache": true,
+      "outputs": []
+    },
+    "format": {
+      "cache": false,
+      "outputs": []
+    },
+    "typecheck": {
+      "cache": true,
+      "outputs": []
+    },
+    "db:generate": {
+      "cache": true,
+      "outputs": ["node_modules/@prisma/client"]
+    },
+    "db:migrate:dev": {
+      "cache": false,
+      "interactive": true
+    },
+    "db:migrate:deploy": {
+      "cache": false
+    },
+    "db:studio": {
+      "cache": false,
+      "interactive": true
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "db:reset": {
+      "cache": false
+    },
+    "db:status": {
+      "cache": false
+    }
+  }
+}

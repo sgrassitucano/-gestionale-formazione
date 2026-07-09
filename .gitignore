@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.lcov
+
+# Production
+dist/
+build/
+.next/
+out/
+
+# Misc
+.env
+.env.local
+.env.*.local
+.env.production.local
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# OS
+thumbs.db
+.DS_Store
+
+# Turbo
+.turbo/
+
+# Prisma
+packages/db/node_modules/
+packages/db/dist/
+
+# Supabase local
+.supabase/
+postgres_data/
+
+# Temp
+*.tmp
+.cache/

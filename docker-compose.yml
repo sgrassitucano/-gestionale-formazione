@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: gestionale-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  supabase:
+    image: supabase/supabase:latest
+    container_name: gestionale-supabase
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      SUPABASE_JWT_SECRET: your-jwt-secret-change-me
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWZhbm9ncmFzc2kiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTYyMjAwMDAwMCwiZXhwIjoxOTI3NjAwMDAwfQ.lfELYqvTW7yrWP23Q8oCDg0m0B2Z0Q_X_Z0Q_Z0Q_Z0
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWZhbm9ncmFzc2kiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjIyMDAwMDAwLCJleHAiOjE5Mjc2MDAwMDB9.lfELYqvTW7yrWP23Q8oCDg0m0B2Z0Q_X_Z0Q_Z0Q_Z0
+    ports:
+      - "54321:8000"
+      - "5432:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - supabase_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    driver: local
+  supabase_data:
+    driver: local

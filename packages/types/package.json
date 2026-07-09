@@ -1,0 +1,23 @@
+{
+  "name": "@gestionale/types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript types for Gestionale Formazione",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./users": "./src/users.ts",
+    "./corsi": "./src/corsi.ts",
+    "./aule": "./src/aule.ts",
+    "./discenti": "./src/discenti.ts",
+    "./iscrizioni": "./src/iscrizioni.ts",
+    "./modulistica": "./src/modulistica.ts",
+    "./reports": "./src/reports.ts",
+    "./centri-costo": "./src/centri-costo.ts",
+    "./api": "./src/api.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

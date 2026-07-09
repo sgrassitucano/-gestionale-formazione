@@ -1,0 +1,33 @@
+{
+  "name": "@gestionale/db",
+  "version": "0.1.0",
+  "description": "Prisma database schema and client for Gestionale Formazione",
+  "private": true,
+  "main": "src/client.ts",
+  "exports": {
+    ".": "./src/client.ts",
+    "./seed": "./src/seeds/seed.ts"
+  },
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "node --loader tsx src/seeds/seed.ts",
+    "db:reset": "prisma migrate reset",
+    "db:status": "prisma migrate status",
+    "db:push": "prisma db push"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "prisma": "^5.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.0.0",
+    "@gestionale/types": "workspace:*",
+    "@gestionale/utils": "workspace:*",
+    "tweetnacl": "^1.0.3"
+  }
+}

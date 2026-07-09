@@ -1,0 +1,29 @@
+{
+  "name": "gestionale-formazione-monorepo",
+  "version": "0.1.0",
+  "description": "Gestionale Formazione Sicurezza - Il Tucano",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "start": "turbo run start",
+    "db:generate": "turbo run db:generate --filter=db",
+    "db:migrate:dev": "turbo run db:migrate:dev --filter=db",
+    "db:migrate:deploy": "turbo run db:migrate:deploy --filter=db",
+    "db:studio": "turbo run db:studio --filter=db",
+    "db:seed": "turbo run db:seed --filter=db",
+    "db:reset": "turbo run db:reset --filter=db",
+    "db:status": "turbo run db:status --filter=db"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
