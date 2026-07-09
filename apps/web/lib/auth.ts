@@ -1,29 +1,128 @@
-import { createClient } from "@supabase/supabase-js";
-import { type SessionUser } from "@gestionale/types";
+import { db } from "@gestionale/db";
+import { type SessionUser, type ProfiloUtente, Ruolo } from "@gestionale/types";
+import { hashPassword, verifyPassword, generateJWT, verifyJWT } from "./crypto";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const JWT_SECRET = process.env.NEXT_PUBLIC_SESSION_SECRET || "dev-secret-change-me";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
-}
+export async function createUser(
+  email: string,
+  password: string,
+  ruolo: Ruolo = "VISUALIZZATORE",
+  nome?: string,
+  cognome?: string
+): Promise<SessionUser | null> {
+  try {
+    const passwordHash = await hashPassword(password);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const user = await db.profiloUtente.create({
+      data: {
+        email,
+        passwordHash,
+        ruolo,
+        nome,
+        cognome,
+      },
+    });
 
-export async function getSession(): Promise<SessionUser | null> {
-  // TODO: Implement session retrieval from JWT cookie
-  // Return user info if valid session exists
-  return null;
+    // Seed module permissions for this role
+    const modules = [1, 2, 3, 4, 5, 6, 7];
+    for (const moduloId of modules) {
+      await db.moduloPermesso.upsert({
+        where: {
+          ruolo_moduloId: {
+            ruolo: ruolo,
+            moduloId,
+          },
+        },
+        create: {
+          ruolo,
+          moduloId,
+          visible: true,
+        },
+        update: {},
+      });
+    }
+
+    return sessionUserFromProfilo(user);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return null;
+  }
 }
 
 export async function loginUser(
   email: string,
   password: string
 ): Promise<{ user: SessionUser; token: string } | null> {
-  // TODO: Implement login via Supabase auth
-  return null;
+  try {
+    const user = await db.profiloUtente.findUnique({
+      where: { email },
+    });
+
+    if (!user || user.deletedAt) {
+      return null;
+    }
+
+    const passwordMatches = await verifyPassword(password, user.passwordHash);
+    if (!passwordMatches) {
+      return null;
+    }
+
+    const sessionUser = sessionUserFromProfilo(user);
+    const token = generateJWT(sessionUser, JWT_SECRET);
+
+    return { user: sessionUser, token };
+  } catch (error) {
+    console.error("Error logging in:", error);
+    return null;
+  }
 }
 
-export async function logoutUser(): Promise<void> {
-  // TODO: Implement logout (clear session cookie, call Supabase logout)
+export async function getUserByEmail(email: string): Promise<ProfiloUtente | null> {
+  try {
+    return await db.profiloUtente.findUnique({
+      where: { email },
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+export function verifyToken(token: string): SessionUser | null {
+  const payload = verifyJWT(token, JWT_SECRET);
+  if (!payload) return null;
+
+  return {
+    id: payload.id,
+    email: payload.email,
+    ruolo: payload.ruolo,
+    nome: payload.nome,
+    cognome: payload.cognome,
+  };
+}
+
+export async function getUserById(userId: string): Promise<SessionUser | null> {
+  try {
+    const user = await db.profiloUtente.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || user.deletedAt) {
+      return null;
+    }
+
+    return sessionUserFromProfilo(user);
+  } catch (error) {
+    return null;
+  }
+}
+
+function sessionUserFromProfilo(profilo: ProfiloUtente): SessionUser {
+  return {
+    id: profilo.id,
+    email: profilo.email,
+    ruolo: profilo.ruolo,
+    nome: profilo.nome,
+    cognome: profilo.cognome,
+  };
 }

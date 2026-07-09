@@ -1,0 +1,91 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { type SessionUser } from "@gestionale/types";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { UserMenu } from "@/components/layout/UserMenu";
+
+const MODULE_NAMES: Record<number, string> = {
+  1: "Autenticazione",
+  2: "Importazione",
+  3: "Aule",
+  4: "Modulistica",
+  5: "Prefatturazione",
+  6: "Report",
+  7: "Centri Costo",
+};
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [modules, setModules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const response = await axios.get("/api/auth/me");
+        if (response.data.user) {
+          setUser(response.data.user);
+
+          // Load permissions
+          const permsResponse = await axios.get("/api/permissions");
+          if (permsResponse.data.permissions) {
+            const modulesWithNames = permsResponse.data.permissions
+              .reduce((acc: any[], perm: any) => {
+                const existing = acc.find((m) => m.id === perm.moduloId);
+                if (!existing) {
+                  acc.push({
+                    id: perm.moduloId,
+                    name: MODULE_NAMES[perm.moduloId],
+                    visible: perm.visible && perm.ruolo === response.data.user.ruolo,
+                  });
+                }
+                return acc;
+              }, [])
+              .sort((a: any, b: any) => a.id - b.id);
+
+            setModules(modulesWithNames);
+          }
+        }
+      } catch (error) {
+        router.push("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar user={user} modules={modules} />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Gestionale Formazione</h1>
+          <UserMenu user={user} />
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
