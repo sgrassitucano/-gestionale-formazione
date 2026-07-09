@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Download, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -12,27 +13,27 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export default function Modulo5Page() {
   const [tab, setTab] = useState<"report" | "listini">("report");
 
   return (
     <div className="max-w-6xl">
-      <h1 className="text-2xl font-bold mb-6">Modulo 5: Prefatturazione</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-1">Prefatturazione</h1>
+      <p className="text-sm text-muted-foreground mb-6">Bilancio, listini e report ricavi</p>
 
-      <div className="flex gap-4 mb-6 border-b">
-        <button
-          onClick={() => setTab("report")}
-          className={`pb-2 px-2 ${tab === "report" ? "border-b-2 border-blue-600 font-semibold" : "text-gray-500"}`}
-        >
+      <div className="flex gap-1 mb-6 bg-secondary/60 p-1 rounded-lg w-fit">
+        <Button variant={tab === "report" ? "default" : "ghost"} size="sm" onClick={() => setTab("report")}>
           Report Bilancio
-        </button>
-        <button
-          onClick={() => setTab("listini")}
-          className={`pb-2 px-2 ${tab === "listini" ? "border-b-2 border-blue-600 font-semibold" : "text-gray-500"}`}
-        >
+        </Button>
+        <Button variant={tab === "listini" ? "default" : "ghost"} size="sm" onClick={() => setTab("listini")}>
           Listini Prezzi
-        </button>
+        </Button>
       </div>
 
       {tab === "report" ? <ReportTab /> : <ListiniTab />}
@@ -46,7 +47,6 @@ function ReportTab() {
   const [corsi, setCorsi] = useState<any[]>([]);
   const [report, setReport] = useState<any[]>([]);
   const [totals, setTotals] = useState({ ricavo: 0, costo: 0, margine: 0 });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     axios.get("/api/corsi").then((res) => setCorsi(res.data.corsi || []));
@@ -54,19 +54,15 @@ function ReportTab() {
   }, []);
 
   const loadReport = async () => {
-    setLoading(true);
     try {
       const params: any = {};
       if (mese) params.mese = mese;
       if (corso) params.corso = corso;
-
       const res = await axios.get("/api/reports/prefatturazione", { params });
       setReport(res.data.report || []);
       setTotals(res.data.totals || { ricavo: 0, costo: 0, margine: 0 });
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -78,114 +74,104 @@ function ReportTab() {
     window.open(`/api/reports/prefatturazione?${params.toString()}`, "_blank");
   };
 
-  const chartData = report.map((r) => ({
-    name: r.corsoCodice,
-    Ricavo: r.ricavo,
-    Costo: r.costo,
-    Margine: r.margine,
-  }));
+  const chartData = report.map((r) => ({ name: r.corsoCodice, Ricavo: r.ricavo, Costo: r.costo, Margine: r.margine }));
 
   return (
     <div>
-      <div className="bg-white rounded-lg shadow p-4 mb-6 flex gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium mb-1">Mese</label>
-          <input
-            type="month"
-            value={mese}
-            onChange={(e) => setMese(e.target.value)}
-            className="border px-3 py-2 rounded"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Corso</label>
-          <select
-            value={corso}
-            onChange={(e) => setCorso(e.target.value)}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="">Tutti</option>
-            {corsi.map((c) => (
-              <option key={c.codice} value={c.codice}>{c.titolo}</option>
-            ))}
-          </select>
-        </div>
-        <button onClick={loadReport} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Applica Filtri
-        </button>
-        <button onClick={handleExport} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          Export XLS
-        </button>
-      </div>
+      <Card className="mb-6">
+        <CardContent className="p-4 flex gap-4 items-end flex-wrap">
+          <div className="space-y-1.5">
+            <Label>Mese</Label>
+            <Input type="month" value={mese} onChange={(e) => setMese(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Corso</Label>
+            <select value={corso} onChange={(e) => setCorso(e.target.value)} className="flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm">
+              <option value="">Tutti</option>
+              {corsi.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
+            </select>
+          </div>
+          <Button onClick={loadReport}>Applica Filtri</Button>
+          <Button variant="success" onClick={handleExport}>
+            <Download className="h-4 w-4" /> Export XLS
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Ricavo Totale</p>
-          <p className="text-2xl font-bold text-green-600">€ {totals.ricavo.toFixed(2)}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Costo Totale</p>
-          <p className="text-2xl font-bold text-red-600">€ {totals.costo.toFixed(2)}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Margine Totale</p>
-          <p className="text-2xl font-bold text-blue-600">€ {totals.margine.toFixed(2)}</p>
-        </div>
+        <StatCard label="Ricavo Totale" value={totals.ricavo} icon={TrendingUp} color="text-success" />
+        <StatCard label="Costo Totale" value={totals.costo} icon={TrendingDown} color="text-destructive" />
+        <StatCard label="Margine Totale" value={totals.margine} icon={DollarSign} color="text-primary" />
       </div>
 
       {chartData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6" style={{ height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Ricavo" fill="#22c55e" />
-              <Bar dataKey="Costo" fill="#ef4444" />
-              <Bar dataKey="Margine" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card className="mb-6">
+          <CardContent className="p-4" style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Ricavo" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Costo" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Margine" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Corso</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Discenti</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Ricavo</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Costo</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Margine</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">%</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Chiusura</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.map((r) => (
-              <tr key={r.aulaId} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm">{r.corso}</td>
-                <td className="px-4 py-3 text-sm">{r.discentiCount}</td>
-                <td className="px-4 py-3 text-sm">€ {r.ricavo.toFixed(2)}</td>
-                <td className="px-4 py-3 text-sm">€ {r.costo.toFixed(2)}</td>
-                <td className="px-4 py-3 text-sm font-semibold">€ {r.margine.toFixed(2)}</td>
-                <td className="px-4 py-3 text-sm">{r.marginePct.toFixed(1)}%</td>
-                <td className="px-4 py-3 text-sm">{new Date(r.dataChiusura).toLocaleDateString("it-IT")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Corso</TableHead>
+            <TableHead>Discenti</TableHead>
+            <TableHead>Ricavo</TableHead>
+            <TableHead>Costo</TableHead>
+            <TableHead>Margine</TableHead>
+            <TableHead>%</TableHead>
+            <TableHead>Chiusura</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {report.map((r) => (
+            <TableRow key={r.aulaId}>
+              <TableCell className="font-medium">{r.corso}</TableCell>
+              <TableCell>{r.discentiCount}</TableCell>
+              <TableCell className="text-success">€ {r.ricavo.toFixed(2)}</TableCell>
+              <TableCell className="text-destructive">€ {r.costo.toFixed(2)}</TableCell>
+              <TableCell className="font-semibold">€ {r.margine.toFixed(2)}</TableCell>
+              <TableCell>{r.marginePct.toFixed(1)}%</TableCell>
+              <TableCell>{new Date(r.dataChiusura).toLocaleDateString("it-IT")}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, color }: any) {
+  return (
+    <Card>
+      <CardContent className="p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground font-medium">{label}</p>
+          <p className={`text-2xl font-bold ${color}`}>€ {value.toFixed(2)}</p>
+        </div>
+        <div className={`h-9 w-9 rounded-lg bg-secondary flex items-center justify-center ${color}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function ListiniTab() {
   const [listini, setListini] = useState<any[]>([]);
   const [corsi, setCorsi] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ corsoCodec: "", tipoErogazione: "AULA_FAD", costo: 0 });
 
   useEffect(() => {
@@ -193,97 +179,73 @@ function ListiniTab() {
   }, []);
 
   const load = async () => {
-    try {
-      const [listiniRes, corsiRes] = await Promise.all([
-        axios.get("/api/listini"),
-        axios.get("/api/corsi"),
-      ]);
-      setListini(listiniRes.data.listini || []);
-      setCorsi(corsiRes.data.corsi || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    const [listiniRes, corsiRes] = await Promise.all([axios.get("/api/listini"), axios.get("/api/corsi")]);
+    setListini(listiniRes.data.listini || []);
+    setCorsi(corsiRes.data.corsi || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await axios.post("/api/listini", form);
-      setForm({ corsoCodec: "", tipoErogazione: "AULA_FAD", costo: 0 });
-      load();
-    } catch (error) {
-      console.error(error);
-    }
+    await axios.post("/api/listini", form);
+    setForm({ corsoCodec: "", tipoErogazione: "AULA_FAD", costo: 0 });
+    load();
   };
-
-  if (loading) return <div>Loading...</div>;
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 mb-6 flex gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium mb-1">Corso</label>
-          <select
-            value={form.corsoCodec}
-            onChange={(e) => setForm({ ...form, corsoCodec: e.target.value })}
-            className="border px-3 py-2 rounded"
-            required
-          >
-            <option value="">Seleziona corso</option>
-            {corsi.map((c) => (
-              <option key={c.codice} value={c.codice}>{c.titolo}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Tipo Erogazione</label>
-          <select
-            value={form.tipoErogazione}
-            onChange={(e) => setForm({ ...form, tipoErogazione: e.target.value })}
-            className="border px-3 py-2 rounded"
-          >
-            <option value="AULA_FAD">Aula/FAD</option>
-            <option value="E_LEARNING">E-Learning</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Costo (€)</label>
-          <input
-            type="number"
-            step="0.01"
-            value={form.costo}
-            onChange={(e) => setForm({ ...form, costo: parseFloat(e.target.value) })}
-            className="border px-3 py-2 rounded w-32"
-            required
-          />
-        </div>
-        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          Salva Listino
-        </button>
-      </form>
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="flex gap-4 items-end flex-wrap">
+            <div className="space-y-1.5">
+              <Label>Corso</Label>
+              <select
+                value={form.corsoCodec}
+                onChange={(e) => setForm({ ...form, corsoCodec: e.target.value })}
+                className="flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
+                required
+              >
+                <option value="">Seleziona corso</option>
+                {corsi.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo Erogazione</Label>
+              <select
+                value={form.tipoErogazione}
+                onChange={(e) => setForm({ ...form, tipoErogazione: e.target.value })}
+                className="flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
+              >
+                <option value="AULA_FAD">Aula/FAD</option>
+                <option value="E_LEARNING">E-Learning</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Costo (€)</Label>
+              <Input type="number" step="0.01" value={form.costo} onChange={(e) => setForm({ ...form, costo: parseFloat(e.target.value) })} className="w-32" required />
+            </div>
+            <Button type="submit" variant="success">Salva Listino</Button>
+          </form>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Corso</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Tipo</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Costo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {listini.map((l) => (
-              <tr key={l.id} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-3 text-sm">{l.corso.titolo}</td>
-                <td className="px-6 py-3 text-sm">{l.tipoErogazione}</td>
-                <td className="px-6 py-3 text-sm">€ {Number(l.costo).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Corso</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Costo</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {listini.map((l) => (
+            <TableRow key={l.id}>
+              <TableCell className="font-medium">{l.corso.titolo}</TableCell>
+              <TableCell>{l.tipoErogazione}</TableCell>
+              <TableCell>€ {Number(l.costo).toFixed(2)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

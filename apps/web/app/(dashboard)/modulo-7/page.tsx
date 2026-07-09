@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Download, ChevronDown, ChevronUp, Landmark } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export default function Modulo7Page() {
   const [aule, setAule] = useState<any[]>([]);
@@ -19,15 +24,10 @@ export default function Modulo7Page() {
   }, [selectedAula]);
 
   const loadCentriCosto = async () => {
-    try {
-      const params: any = {};
-      if (selectedAula) params.aulaId = selectedAula;
-
-      const res = await axios.get("/api/reports/centri-costo", { params });
-      setDrillDown(res.data.drillDown || []);
-    } catch (error) {
-      console.error(error);
-    }
+    const params: any = {};
+    if (selectedAula) params.aulaId = selectedAula;
+    const res = await axios.get("/api/reports/centri-costo", { params });
+    setDrillDown(res.data.drillDown || []);
   };
 
   const handleExport = () => {
@@ -39,76 +39,91 @@ export default function Modulo7Page() {
 
   const totale = drillDown.reduce((sum, c) => sum + c.totale, 0);
 
+  if (loading) return <div className="text-muted-foreground">Loading...</div>;
+
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">Modulo 7: Centri di Costo</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-1">Centri di Costo</h1>
+      <p className="text-sm text-muted-foreground mb-6">Distribuzione costi per cantiere</p>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6 flex gap-4 items-end">
-        <div className="flex-1">
-          <label className="block text-sm font-medium mb-1">Seleziona Aula</label>
-          <select
-            value={selectedAula}
-            onChange={(e) => setSelectedAula(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-          >
-            <option value="">Tutte le aule (AULA_FAD chiuse)</option>
-            {aule.map((a: any) => (
-              <option key={a.id} value={a.id}>{a.corso?.titolo} — {a.luogo}</option>
-            ))}
-          </select>
-        </div>
-        <button onClick={handleExport} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          Export XLS
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <p className="text-sm text-gray-500">Totale Costi Distribuiti</p>
-        <p className="text-3xl font-bold text-blue-600">€ {totale.toFixed(2)}</p>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {drillDown.length === 0 ? (
-          <p className="p-6 text-gray-500">Nessun dato disponibile. Chiudi un'aula AULA_FAD per generare centri costo.</p>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Cantiere</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Costo Totale</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {drillDown.map((c) => (
-                <>
-                  <tr
-                    key={c.cantiere}
-                    className="border-t hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setExpandedCantiere(expandedCantiere === c.cantiere ? null : c.cantiere)}
-                  >
-                    <td className="px-6 py-3 text-sm font-semibold">{c.cantiere}</td>
-                    <td className="px-6 py-3 text-sm">€ {c.totale.toFixed(2)}</td>
-                    <td className="px-6 py-3 text-sm text-blue-600">
-                      {expandedCantiere === c.cantiere ? "▲ Chiudi" : "▼ Dettaglio"}
-                    </td>
-                  </tr>
-                  {expandedCantiere === c.cantiere &&
-                    c.sottocantieri.map((sub: any) => (
-                      <tr key={`${c.cantiere}-${sub.nome}`} className="border-t bg-gray-50">
-                        <td className="px-6 py-2 text-sm pl-12 text-gray-600">
-                          {sub.nome} {sub.responsabile ? `(Resp: ${sub.responsabile})` : ""}
-                        </td>
-                        <td className="px-6 py-2 text-sm text-gray-600">€ {sub.totale.toFixed(2)}</td>
-                        <td></td>
-                      </tr>
-                    ))}
-                </>
+      <Card className="mb-6">
+        <CardContent className="p-4 flex gap-4 items-end">
+          <div className="flex-1 space-y-1.5">
+            <Label>Seleziona Aula</Label>
+            <select
+              value={selectedAula}
+              onChange={(e) => setSelectedAula(e.target.value)}
+              className="w-full flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
+            >
+              <option value="">Tutte le aule (AULA_FAD chiuse)</option>
+              {aule.map((a: any) => (
+                <option key={a.id} value={a.id}>{a.corso?.titolo} — {a.luogo}</option>
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+            </select>
+          </div>
+          <Button variant="success" onClick={handleExport}>
+            <Download className="h-4 w-4" /> Export XLS
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Totale Costi Distribuiti</p>
+            <p className="text-3xl font-bold text-primary">€ {totale.toFixed(2)}</p>
+          </div>
+          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <Landmark className="h-5 w-5" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {drillDown.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground text-sm">
+            Nessun dato disponibile. Chiudi un'aula AULA_FAD per generare centri costo.
+          </CardContent>
+        </Card>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cantiere</TableHead>
+              <TableHead>Costo Totale</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {drillDown.map((c) => (
+              <>
+                <TableRow
+                  key={c.cantiere}
+                  className="cursor-pointer"
+                  onClick={() => setExpandedCantiere(expandedCantiere === c.cantiere ? null : c.cantiere)}
+                >
+                  <TableCell className="font-semibold">{c.cantiere}</TableCell>
+                  <TableCell>€ {c.totale.toFixed(2)}</TableCell>
+                  <TableCell className="text-primary flex items-center gap-1 text-sm">
+                    {expandedCantiere === c.cantiere ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    Dettaglio
+                  </TableCell>
+                </TableRow>
+                {expandedCantiere === c.cantiere &&
+                  c.sottocantieri.map((sub: any) => (
+                    <TableRow key={`${c.cantiere}-${sub.nome}`} className="bg-secondary/30">
+                      <TableCell className="pl-10 text-muted-foreground text-sm">
+                        {sub.nome} {sub.responsabile ? `(Resp: ${sub.responsabile})` : ""}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">€ {sub.totale.toFixed(2)}</TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  ))}
+              </>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
