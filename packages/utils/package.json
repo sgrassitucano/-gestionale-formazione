@@ -10,14 +10,33 @@
     "./formatters": "./src/formatters.ts",
     "./calculations": "./src/calculations.ts",
     "./encryption": "./src/encryption.ts",
-    "./google-calendar": "./src/google-calendar.ts"
+    "./google-calendar": "./src/google-calendar.ts",
+    "./google-calendar-oauth": "./src/google-calendar-oauth.ts",
+    "./xlsx-parser": "./src/xlsx-parser.ts",
+    "./discenti-validator": "./src/discenti-validator.ts",
+    "./xlsx-exporter": "./src/xlsx-exporter.ts",
+    "./template-field-extractor": "./src/template-field-extractor.ts",
+    "./document-generator": "./src/document-generator.ts",
+    "./conflict-checker": "./src/conflict-checker.ts",
+    "./bilancio-calculator": "./src/bilancio-calculator.ts",
+    "./centri-costo-calculator": "./src/centri-costo-calculator.ts",
+    "./kpi-calculator": "./src/kpi-calculator.ts"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
   },
   "dependencies": {
     "@gestionale/types": "workspace:*",
     "tweetnacl": "^1.0.3",
-    "tweetnacl-util": "^0.15.1"
+    "tweetnacl-util": "^0.15.1",
+    "xlsx": "^0.18.5",
+    "mammoth": "^1.7.0",
+    "pdf-parse": "^1.1.1",
+    "pdf-lib": "^1.17.1",
+    "docxtemplater": "^3.44.0",
+    "pizzip": "^3.1.6",
+    "handlebars": "^4.7.8",
+    "googleapis": "^140.0.0"
   }
 }

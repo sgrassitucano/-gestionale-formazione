@@ -79,6 +79,26 @@ export function Sidebar({ user, modules }: SidebarProps) {
             >
               Audit Log
             </Link>
+            <Link
+              href="/admin/utenti"
+              className={`block px-4 py-2 rounded mb-1 ${
+                pathname === "/admin/utenti"
+                  ? "bg-blue-600"
+                  : "hover:bg-gray-700"
+              }`}
+            >
+              Utenti
+            </Link>
+            <Link
+              href="/admin/impostazioni"
+              className={`block px-4 py-2 rounded mb-1 ${
+                pathname === "/admin/impostazioni"
+                  ? "bg-blue-600"
+                  : "hover:bg-gray-700"
+              }`}
+            >
+              Impostazioni
+            </Link>
           </>
         )}
       </nav>
