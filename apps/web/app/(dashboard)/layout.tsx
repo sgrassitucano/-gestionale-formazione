@@ -10,11 +10,21 @@ import { UserMenu } from "@/components/layout/UserMenu";
 const MODULE_NAMES: Record<number, string> = {
   1: "Autenticazione",
   2: "Importazione",
-  3: "Aule",
+  3: "Aule + Calendario",
   4: "Modulistica",
   5: "Prefatturazione",
-  6: "Report",
+  6: "Report + KPI",
   7: "Centri Costo",
+};
+
+const MODULE_ROUTES: Record<number, string> = {
+  1: "/admin/permissions",
+  2: "/modulo-2/importazione",
+  3: "/modulo-3/aule",
+  4: "/modulo-4",
+  5: "/modulo-5",
+  6: "/modulo-6",
+  7: "/modulo-7",
 };
 
 export default function DashboardLayout({
@@ -44,6 +54,7 @@ export default function DashboardLayout({
                   acc.push({
                     id: perm.moduloId,
                     name: MODULE_NAMES[perm.moduloId],
+                    route: MODULE_ROUTES[perm.moduloId],
                     visible: perm.visible && perm.ruolo === response.data.user.ruolo,
                   });
                 }

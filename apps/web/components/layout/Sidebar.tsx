@@ -6,7 +6,7 @@ import { type SessionUser } from "@gestionale/types";
 
 interface SidebarProps {
   user: SessionUser;
-  modules: Array<{ id: number; name: string; visible: boolean }>;
+  modules: Array<{ id: number; name: string; visible: boolean; route: string }>;
 }
 
 export function Sidebar({ user, modules }: SidebarProps) {
@@ -42,9 +42,9 @@ export function Sidebar({ user, modules }: SidebarProps) {
         {visibleModules.map((mod) => (
           <Link
             key={mod.id}
-            href={`/modulo-${mod.id}`}
+            href={mod.route}
             className={`block px-4 py-2 rounded mb-1 ${
-              pathname.includes(`modulo-${mod.id}`)
+              pathname.includes(`modulo-${mod.id}`) || pathname === mod.route
                 ? "bg-blue-600"
                 : "hover:bg-gray-700"
             }`}
