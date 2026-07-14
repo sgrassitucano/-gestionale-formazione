@@ -14,7 +14,7 @@ const docenteAssignSchema = z.object({
 const createAulaMetaSchema = z.object({
   corsoCodec: z.string(),
   modalita: z.enum(["PRESENZA", "FAD_SINCRONA", "FAD_ASINCRONA"]),
-  luogo: z.string().min(1),
+  luogoId: z.string().min(1),
   dataInizio: z.string(),
   costoAffitto: z.number().min(0).default(0),
   docenti: z.array(docenteAssignSchema).default([]),
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     where,
     include: {
       corso: true,
+      luogo: true,
       iscrizioni: { where: { deletedAt: null } },
       docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
     },
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
         data: {
           corsoCodec: meta.corsoCodec,
           modalita: meta.modalita as any,
-          luogo: meta.luogo,
+          luogoId: meta.luogoId,
           dataInizio: new Date(meta.dataInizio),
           costoAffitto: meta.costoAffitto,
           creatoDay: user.id,

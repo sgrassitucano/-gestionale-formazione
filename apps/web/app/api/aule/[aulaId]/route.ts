@@ -13,6 +13,7 @@ export async function GET(
     where: { id: params.aulaId },
     include: {
       corso: true,
+      luogo: true,
       lezioni: { where: { deletedAt: null }, orderBy: { data: "asc" } },
       iscrizioni: { where: { deletedAt: null }, include: { discente: true } },
       docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
@@ -38,7 +39,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const allowedFields = ["luogo", "stato", "dataInizio", "dataFine"];
+    const allowedFields = ["luogoId", "stato", "dataInizio", "dataFine"];
     const data: any = {};
     for (const key of allowedFields) {
       if (body[key] !== undefined) {

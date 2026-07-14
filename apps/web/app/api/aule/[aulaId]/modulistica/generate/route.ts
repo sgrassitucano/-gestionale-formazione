@@ -34,6 +34,7 @@ export async function POST(
         where: { id: params.aulaId },
         include: {
           corso: true,
+          luogo: true,
           iscrizioni: { include: { discente: true } },
           docentilezioni: { include: { docente: true } },
         },

@@ -81,7 +81,7 @@ export default function AulePage() {
             <TableRow key={a.id}>
               <TableCell className="font-medium">{a.corso?.titolo}</TableCell>
               <TableCell><Badge variant="secondary">{MODALITA_LABELS[a.modalita] || a.modalita}</Badge></TableCell>
-              <TableCell>{a.luogo}</TableCell>
+              <TableCell>{a.luogo?.nome ?? "-"}</TableCell>
               <TableCell><Badge variant={STATO_VARIANT[a.stato]}>{a.stato}</Badge></TableCell>
               <TableCell>{a.iscrizioni?.length || 0}</TableCell>
               <TableCell>{a.docentilezioni?.length || 0}</TableCell>

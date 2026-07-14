@@ -24,7 +24,7 @@ export async function POST(
       db.googleCalendarConfig.findUnique({ where: { utenteId: user.id } }),
       db.aula.findUnique({
         where: { id: params.aulaId },
-        include: { corso: true, lezioni: { where: { deletedAt: null } } },
+        include: { corso: true, luogo: true, lezioni: { where: { deletedAt: null } } },
       }),
     ]);
 
@@ -70,9 +70,9 @@ export async function POST(
         const endDateTime = combineDateTime(lezione.data, lezione.oraFine);
 
         const eventInput = {
-          summary: `${aula.corso.titolo} — ${aula.luogo}`,
+          summary: `${aula.corso.titolo} — ${aula.luogo?.nome ?? ""}`,
           description: `Lezione formazione: ${aula.corso.titolo}`,
-          location: aula.luogo,
+          location: aula.luogo?.nome ?? "",
           startDateTime,
           endDateTime,
         };

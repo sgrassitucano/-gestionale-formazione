@@ -211,12 +211,27 @@ model Docente {
   @@index([deletedAt])
 }
 
+model Luogo {
+  id              String   @id @default(cuid())
+  nome            String   @unique
+  indirizzo       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime? // soft-delete
+
+  // Relazioni
+  aule            Aula[]
+
+  @@index([deletedAt])
+}
+
 model Aula {
   id              String   @id @default(cuid())
   corsoCodec      String
   corso           CatalogoCorso @relation(fields: [corsoCodec], references: [codice], onDelete: Restrict)
   modalita        ModalitaErogazione
-  luogo           String
+  luogoId         String?
+  luogo           Luogo?   @relation(fields: [luogoId], references: [id], onDelete: SetNull)
   stato           StatoAula @default(PIANIFICATA)
   dataInizio      DateTime? // "data aula" — determina anche il mese di fatturazione
   dataFine        DateTime?
@@ -237,6 +252,7 @@ model Aula {
   @@index([modalita])
   @@index([dataInizio])
   @@index([deletedAt])
+  @@index([luogoId])
 }
 
 model Lezione {

@@ -91,7 +91,7 @@ export default function AulaDetailPage() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-bold text-foreground">{aula.corso?.titolo}</h1>
-              <p className="text-muted-foreground">{aula.luogo}</p>
+              <p className="text-muted-foreground">{aula.luogo?.nome ?? "-"}</p>
               <Badge variant={STATO_VARIANT[aula.stato]} className="mt-2">{aula.stato}</Badge>
             </div>
             <div className="flex gap-2">

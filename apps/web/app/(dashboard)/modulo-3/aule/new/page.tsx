@@ -22,6 +22,9 @@ export default function NuovaAulaPage() {
   const [step, setStep] = useState(0);
   const [corsi, setCorsi] = useState<any[]>([]);
   const [docenti, setDocenti] = useState<any[]>([]);
+  const [luoghi, setLuoghi] = useState<any[]>([]);
+  const [nuovoLuogo, setNuovoLuogo] = useState("");
+  const [showNuovoLuogo, setShowNuovoLuogo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,7 +36,7 @@ export default function NuovaAulaPage() {
   const [file, setFile] = useState<File | null>(null);
 
   // Step 3
-  const [luogo, setLuogo] = useState("");
+  const [luogoId, setLuogoId] = useState("");
   const [dataInizio, setDataInizio] = useState("");
   const [costoAffitto, setCostoAffitto] = useState(0);
   const [docentiAssegnati, setDocentiAssegnati] = useState<Array<{ docenteId: string; oreEffettiveDocenza: number; trasferAcosto: number }>>([]);
@@ -41,7 +44,22 @@ export default function NuovaAulaPage() {
   useEffect(() => {
     axios.get("/api/corsi").then((res) => setCorsi(res.data.corsi || []));
     axios.get("/api/docenti").then((res) => setDocenti(res.data.docenti || []));
+    loadLuoghi();
   }, []);
+
+  const loadLuoghi = async () => {
+    const res = await axios.get("/api/luoghi");
+    setLuoghi(res.data.luoghi || []);
+  };
+
+  const handleCreaLuogo = async () => {
+    if (!nuovoLuogo.trim()) return;
+    const res = await axios.post("/api/luoghi", { nome: nuovoLuogo.trim() });
+    setNuovoLuogo("");
+    setShowNuovoLuogo(false);
+    await loadLuoghi();
+    setLuogoId(res.data.luogo.id);
+  };
 
   const addDocente = () => {
     setDocentiAssegnati([...docentiAssegnati, { docenteId: "", oreEffettiveDocenza: 0, trasferAcosto: 0 }]);
@@ -71,7 +89,7 @@ export default function NuovaAulaPage() {
 
   const canProceedStep1 = corsoCodec && modalita;
   const canProceedStep2 = !!file;
-  const canSubmit = luogo && dataInizio;
+  const canSubmit = luogoId && dataInizio;
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -84,7 +102,7 @@ export default function NuovaAulaPage() {
         JSON.stringify({
           corsoCodec,
           modalita,
-          luogo,
+          luogoId,
           dataInizio,
           costoAffitto,
           docenti: docentiAssegnati.filter((d) => d.docenteId),
@@ -186,7 +204,36 @@ export default function NuovaAulaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Luogo</Label>
-                  <Input value={luogo} onChange={(e) => setLuogo(e.target.value)} required />
+                  {showNuovoLuogo ? (
+                    <div className="flex gap-2">
+                      <Input
+                        value={nuovoLuogo}
+                        onChange={(e) => setNuovoLuogo(e.target.value)}
+                        placeholder="Nome nuova sede"
+                        autoFocus
+                      />
+                      <Button type="button" size="sm" variant="success" onClick={handleCreaLuogo}>
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setShowNuovoLuogo(false)}>
+                        Annulla
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <select
+                        value={luogoId}
+                        onChange={(e) => setLuogoId(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                      >
+                        <option value="">Seleziona luogo</option>
+                        {luoghi.map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}
+                      </select>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setShowNuovoLuogo(true)}>
+                        <Plus className="h-3.5 w-3.5" /> Nuovo
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Data Aula</Label>

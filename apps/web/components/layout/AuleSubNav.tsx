@@ -8,6 +8,8 @@ const TABS = [
   { href: "/modulo-3/aule", label: "Lista Aule" },
   { href: "/modulo-3/corsi", label: "Anagrafica Corsi" },
   { href: "/modulo-3/docenti", label: "Anagrafica Docenti" },
+  { href: "/modulo-3/luoghi", label: "Anagrafica Luoghi" },
+  { href: "/modulo-3/ricerca", label: "Ricerca" },
 ];
 
 export function AuleSubNav() {

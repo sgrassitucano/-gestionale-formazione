@@ -49,14 +49,16 @@ export async function POST(
     if (!aula) return NextResponse.json({ error: "Aula not found" }, { status: 404 });
 
     // Check location overlap: other aule at same luogo/data/ora
-    const otherLezioniStessoLuogo = await db.lezione.findMany({
-      where: {
-        deletedAt: null,
-        aulaId: { not: params.aulaId },
-        data: lezioneData,
-        aula: { luogo: aula.luogo, deletedAt: null },
-      },
-    });
+    const otherLezioniStessoLuogo = aula.luogoId
+      ? await db.lezione.findMany({
+          where: {
+            deletedAt: null,
+            aulaId: { not: params.aulaId },
+            data: lezioneData,
+            aula: { luogoId: aula.luogoId, deletedAt: null },
+          },
+        })
+      : [];
 
     const locationConflicts = findConflicts(
       { data: lezioneData, oraInizio: data.oraInizio, oraFine: data.oraFine },

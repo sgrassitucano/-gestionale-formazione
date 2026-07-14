@@ -17,7 +17,7 @@ const SORGENTI_DATI = [
   { value: "discente.dataNascita", label: "Discente: Data Nascita" },
   { value: "corso.titolo", label: "Corso: Titolo" },
   { value: "corso.codice", label: "Corso: Codice" },
-  { value: "aula.luogo", label: "Aula: Luogo" },
+  { value: "aula.luogo.nome", label: "Aula: Luogo" },
   { value: "aula.dataInizio", label: "Aula: Data Inizio" },
   { value: "aula.dataFine", label: "Aula: Data Fine" },
   { value: "docente.nome", label: "Docente: Nome" },

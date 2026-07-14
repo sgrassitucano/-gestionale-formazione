@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     where: { deletedAt: null, dataInizio: { gte: start, lte: end } },
     include: {
       corso: { include: { listiniPrezzi: true } },
+      luogo: true,
       iscrizioni: { where: { deletedAt: null } },
       docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
     },
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
         aulaId: a.id,
         corso: a.corso.titolo,
         modalita: a.modalita,
-        luogo: a.luogo,
+        luogo: a.luogo?.nome ?? "",
         discentiCount: a.iscrizioni.length,
         dataInizio: a.dataInizio,
         importoDaFatturare: importo,

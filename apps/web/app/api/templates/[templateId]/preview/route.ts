@@ -20,7 +20,7 @@ const SAMPLE_CONTEXT = {
     codice: "FORM_BASE",
   },
   aula: {
-    luogo: "Sede di esempio",
+    luogo: { nome: "Sede di esempio" },
     dataInizio: new Date(),
     dataFine: new Date(),
   },
