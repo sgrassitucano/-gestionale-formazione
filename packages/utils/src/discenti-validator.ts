@@ -1,15 +1,17 @@
 import { type Discente } from "@gestionale/types";
 import { validateCF, validateEmail } from "./validators";
 
+export type DiscenteRow = Omit<Discente, "createdAt" | "updatedAt" | "deletedAt">;
+
 export interface ValidationResult {
-  valid: Discente[];
+  valid: DiscenteRow[];
   errors: Array<{ line: number; field: string; value: any; message: string }>;
 }
 
 export function validateDiscentiRows(
   rows: Record<string, any>[]
 ): ValidationResult {
-  const valid: Discente[] = [];
+  const valid: DiscenteRow[] = [];
   const errors: Array<{ line: number; field: string; value: any; message: string }> = [];
   const seenCFs = new Set<string>();
 

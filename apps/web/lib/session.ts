@@ -1,6 +1,5 @@
 import { type NextRequest, type NextResponse } from "next/server";
 import { type SessionUser } from "@gestionale/types";
-import { verifyToken } from "./auth";
 
 const SESSION_COOKIE_NAME = "session_token";
 

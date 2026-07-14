@@ -2,25 +2,21 @@
 
 import Link from "next/link";
 import {
-  Upload,
   School,
   FileText,
   Receipt,
   BarChart3,
   Landmark,
-  ShieldCheck,
   ArrowRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const modules = [
-  { id: 1, name: "Autenticazione", desc: "Login e gestione permessi", icon: ShieldCheck, href: "/admin/permissions" },
-  { id: 2, name: "Importazione", desc: "Upload XLS e catalogo corsi", icon: Upload, href: "/modulo-2/importazione" },
-  { id: 3, name: "Aule", desc: "Aule, lezioni, calendario", icon: School, href: "/modulo-3/aule" },
-  { id: 4, name: "Modulistica", desc: "Templates e PDF", icon: FileText, href: "/modulo-4" },
-  { id: 5, name: "Prefatturazione", desc: "Bilancio e ricavi", icon: Receipt, href: "/modulo-5" },
-  { id: 6, name: "Report", desc: "KPI e analytics", icon: BarChart3, href: "/modulo-6" },
-  { id: 7, name: "Centri Costo", desc: "Distribuzione costi", icon: Landmark, href: "/modulo-7" },
+  { id: 1, name: "Aule", desc: "Aule, corsi, docenti, calendario", icon: School, href: "/modulo-3/aule" },
+  { id: 2, name: "Modulistica", desc: "Templates e generazione documenti", icon: FileText, href: "/modulo-4" },
+  { id: 3, name: "Prefatturazione", desc: "Cosa fatturare questo mese", icon: Receipt, href: "/modulo-5" },
+  { id: 4, name: "Report", desc: "Bilancio aule e KPI", icon: BarChart3, href: "/modulo-6" },
+  { id: 5, name: "Centri Costo", desc: "Distribuzione costi per cantiere", icon: Landmark, href: "/modulo-7" },
 ];
 
 export default function DashboardPage() {
@@ -42,7 +38,6 @@ export default function DashboardPage() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground font-medium">Modulo {mod.id}</p>
                     <h3 className="font-semibold text-foreground">{mod.name}</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">{mod.desc}</p>
                   </div>
@@ -58,10 +53,10 @@ export default function DashboardPage() {
         <CardContent className="p-6">
           <h2 className="font-semibold text-foreground mb-3">Getting Started</h2>
           <ol className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex gap-2"><span className="font-semibold text-primary">1.</span> Importa XLS discenti (Modulo 2)</li>
-            <li className="flex gap-2"><span className="font-semibold text-primary">2.</span> Crea aula e assegna discenti/docenti (Modulo 3)</li>
-            <li className="flex gap-2"><span className="font-semibold text-primary">3.</span> Chiudi aula per generare bilancio (Modulo 5)</li>
-            <li className="flex gap-2"><span className="font-semibold text-primary">4.</span> Visualizza report e centri costo (Moduli 6, 7)</li>
+            <li className="flex gap-2"><span className="font-semibold text-primary">1.</span> Crea corso in Anagrafica Corsi (Aule)</li>
+            <li className="flex gap-2"><span className="font-semibold text-primary">2.</span> Crea aula: wizard con upload discenti incluso</li>
+            <li className="flex gap-2"><span className="font-semibold text-primary">3.</span> Consulta Prefatturazione per il mese corrente</li>
+            <li className="flex gap-2"><span className="font-semibold text-primary">4.</span> Report per bilancio/KPI, Centri Costo per distribuzione cantieri</li>
           </ol>
         </CardContent>
       </Card>

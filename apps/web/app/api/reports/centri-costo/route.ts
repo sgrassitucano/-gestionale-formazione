@@ -1,44 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
+import { calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
 import { exportToXlsx } from "@gestionale/utils/xlsx-exporter";
+
+function monthRange(mese: string) {
+  const [year, month] = mese.split("-").map(Number);
+  return { start: new Date(year, month - 1, 1), end: new Date(year, month, 0, 23, 59, 59) };
+}
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const aulaId = searchParams.get("aulaId");
-  const cantiere = searchParams.get("cantiere");
-  const dataInizio = searchParams.get("dataInizio");
-  const dataFine = searchParams.get("dataFine");
+  const mese = searchParams.get("mese");
   const format = searchParams.get("format");
 
-  const where: any = {};
-  if (aulaId) where.aulaId = aulaId;
-  if (cantiere) where.cantiere = cantiere;
-  if (dataInizio && dataFine) {
-    where.dataCalcolo = { gte: new Date(dataInizio), lte: new Date(dataFine) };
+  const where: any = { deletedAt: null };
+  if (mese) {
+    const { start, end } = monthRange(mese);
+    where.dataInizio = { gte: start, lte: end };
   }
 
-  const snapshots = await db.centriCostoSnapshot.findMany({
+  const aule = await db.aula.findMany({
     where,
     include: {
-      aula: { include: { corso: true } },
+      corso: true,
+      iscrizioni: { where: { deletedAt: null } },
+      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
     },
-    orderBy: { dataCalcolo: "desc" },
   });
 
-  const report = snapshots.map((s) => ({
-    id: s.id,
-    aulaId: s.aulaId,
-    corso: s.aula.corso.titolo,
-    cantiere: s.cantiere,
-    sottocantiere: s.sottocantiere,
-    responsabile: s.responsabile,
-    costoAttribuito: Number(s.costoAttribuito),
-    dataCalcolo: s.dataCalcolo,
-  }));
+  const report: Array<{
+    aulaId: string;
+    corso: string;
+    cantiere: string;
+    sottocantiere: string | null;
+    responsabile: string | null;
+    costoAttribuito: number;
+    dataInizio: Date | null;
+  }> = [];
+
+  for (const a of aule) {
+    const costoDocenti = calculateCostoDocenti(
+      a.docentilezioni.map((dl) => ({
+        oreEffettiveDocenza: Number(dl.oreEffettiveDocenza),
+        tariffaOraria: Number(dl.docente.tariffaOraria),
+        trasferAcosto: Number(dl.trasferAcosto),
+      }))
+    );
+    const costoTotale = costoDocenti + Number(a.costoAffitto);
+
+    const distribuzione = calculateCentriCosto(costoTotale, a.iscrizioni);
+    for (const entry of distribuzione) {
+      report.push({
+        aulaId: a.id,
+        corso: a.corso.titolo,
+        cantiere: entry.cantiere,
+        sottocantiere: entry.sottocantiere,
+        responsabile: entry.responsabile,
+        costoAttribuito: entry.costoAttribuito,
+        dataInizio: a.dataInizio,
+      });
+    }
+  }
 
   if (format === "xlsx") {
     const buffer = exportToXlsx(
@@ -48,20 +75,19 @@ export async function GET(request: NextRequest) {
         Sottocantiere: r.sottocantiere || "",
         Responsabile: r.responsabile || "",
         "Costo Attribuito (€)": r.costoAttribuito,
-        Data: r.dataCalcolo.toISOString().split("T")[0],
+        Data: r.dataInizio?.toISOString().split("T")[0] || "",
       })),
       "Centri Costo"
     );
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="centri_costo.xlsx"`,
+        "Content-Disposition": `attachment; filename="centri_costo_${mese || "tutti"}.xlsx"`,
       },
     });
   }
 
-  // Group by cantiere for drill-down structure
   const byCantiere = new Map<string, { cantiere: string; totale: number; sottocantieri: Map<string, { nome: string; totale: number; responsabile: string | null }> }>();
 
   for (const r of report) {
@@ -84,9 +110,5 @@ export async function GET(request: NextRequest) {
     sottocantieri: Array.from(g.sottocantieri.values()),
   }));
 
-  return NextResponse.json({
-    success: true,
-    report,
-    drillDown,
-  });
+  return NextResponse.json({ success: true, drillDown });
 }

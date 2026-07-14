@@ -65,19 +65,13 @@ export default function AulaDetailPage() {
     }
   };
 
-  const handleCloseAula = async () => {
-    if (!confirm("Chiudere l'aula? Verrà generato il bilancio finale (irreversibile).")) return;
-    try {
-      const res = await axios.post(`/api/aule/${aulaId}/close`);
-      alert(`Aula chiusa! Margine: € ${res.data.bilancio.margine.toFixed(2)}`);
-      loadAula();
-    } catch (error: any) {
-      alert(error.response?.data?.error || "Errore chiusura aula");
-    }
-  };
-
   const handleStartAula = async () => {
     await axios.put(`/api/aule/${aulaId}`, { stato: "IN_CORSO" });
+    loadAula();
+  };
+
+  const handleConcludiAula = async () => {
+    await axios.put(`/api/aule/${aulaId}`, { stato: "CONCLUSA" });
     loadAula();
   };
 
@@ -106,30 +100,13 @@ export default function AulaDetailPage() {
                   <Play className="h-4 w-4" /> Avvia Aula
                 </Button>
               )}
-              {aula.stato === "IN_CORSO" && !aula.bilancioSnapshot && (
-                <Button variant="destructive" onClick={handleCloseAula}>
-                  <CheckCircle2 className="h-4 w-4" /> Chiudi Aula
+              {aula.stato === "IN_CORSO" && (
+                <Button variant="secondary" onClick={handleConcludiAula}>
+                  <CheckCircle2 className="h-4 w-4" /> Concludi Aula
                 </Button>
               )}
             </div>
           </div>
-
-          {aula.bilancioSnapshot && (
-            <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-border">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Ricavo</p>
-                <p className="font-bold text-success">€ {Number(aula.bilancioSnapshot.ricavo).toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Costo</p>
-                <p className="font-bold text-destructive">€ {Number(aula.bilancioSnapshot.costoTotale).toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Margine</p>
-                <p className="font-bold text-primary">€ {Number(aula.bilancioSnapshot.margine).toFixed(2)}</p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -142,7 +119,7 @@ export default function AulaDetailPage() {
       </div>
 
       {tab === "calendario" && <CalendarioTab aula={aula} onUpdate={loadAula} />}
-      {tab === "discenti" && <DiscentiTab aula={aula} onUpdate={loadAula} />}
+      {tab === "discenti" && <DiscentiTab aula={aula} />}
       {tab === "docenti" && <DocentiTab aula={aula} onUpdate={loadAula} />}
       {tab === "modulistica" && <ModulisticaTab aula={aula} />}
       {tab === "gcal" && <GCalTab aula={aula} />}
@@ -214,44 +191,12 @@ function CalendarioTab({ aula, onUpdate }: any) {
   );
 }
 
-function DiscentiTab({ aula, onUpdate }: any) {
-  const [esigenze, setEsigenze] = useState<any[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-
-  useEffect(() => {
-    if (showAdd) {
-      axios.get("/api/discenti/esigenze").then((res) => setEsigenze(res.data.discenti || []));
-    }
-  }, [showAdd]);
-
-  const handleAdd = async (discenteId: string) => {
-    await axios.post(`/api/aule/${aula.id}/iscrizioni`, { discenteId });
-    onUpdate();
-    setShowAdd(false);
-  };
-
+function DiscentiTab({ aula }: any) {
   return (
     <div>
-      <div className="mb-4">
-        <Button onClick={() => setShowAdd(!showAdd)} variant={showAdd ? "outline" : "default"}>
-          {showAdd ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showAdd ? "Annulla" : "Aggiungi Discente"}
-        </Button>
-      </div>
-
-      {showAdd && (
-        <Card className="mb-4 max-h-60 overflow-y-auto">
-          <CardContent className="p-4">
-            <p className="font-semibold text-foreground mb-2 text-sm">Esigenze Pendenti ({esigenze.length})</p>
-            {esigenze.map((d) => (
-              <div key={d.id} className="flex justify-between items-center py-2 border-t border-border text-sm">
-                <span>{d.cognome} {d.nome} — {d.azienda?.ragioneSociale}</span>
-                <Button size="sm" variant="ghost" onClick={() => handleAdd(d.id)}>Aggiungi</Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      <p className="text-sm text-muted-foreground mb-4">
+        Discenti caricati in fase di creazione aula ({aula.iscrizioni?.length || 0} totali).
+      </p>
 
       <Table>
         <TableHeader>
@@ -367,7 +312,7 @@ function ModulisticaTab({ aula }: any) {
   useEffect(() => {
     axios.get("/api/templates").then((res) => {
       const mapped = (res.data.templates || []).filter((t: any) =>
-        t.mappings?.some((m: any) => m.corsoCodec === aula.corsoCodec)
+        t.mappings?.some((m: any) => m.corsoCodec === aula.corsoCodec && (m.modalita === null || m.modalita === aula.modalita))
       );
       setTemplates(mapped);
     });

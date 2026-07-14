@@ -1,0 +1,312 @@
+[
+ {
+  "codice": "FORM_BASE",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "FORM_BASE",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 15
+ },
+ {
+  "codice": "FORM_SPEC_BASSO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "FORM_SPEC_BASSO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 25
+ },
+ {
+  "codice": "FORM_SPEC_MEDIO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "FORM_SPEC_ALTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "FORM_BASE_SPEC_BASSO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "FORM_BASE_SPEC_BASSO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 35
+ },
+ {
+  "codice": "FORM_BASE_SPEC_MEDIO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "FORM_BASE_SPEC_ALTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 950
+ },
+ {
+  "codice": "CORSO_AI_1",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_AI_2",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "CORSO_AI_3",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 950
+ },
+ {
+  "codice": "CORSO_AMBCON",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_CARRO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "CORSO_DIR",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 950
+ },
+ {
+  "codice": "CORSO_DISINF",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_DPI3",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_FERETRI",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_FITOSAN",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "CORSO_FORNO_CREM",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_GRUAU",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "CORSO_MUL",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "CORSO_PLE",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "CORSO_PREP",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "CORSO_PS",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "CORSO_QUOTA_DPI",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "CORSO_RLS",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 120
+ },
+ {
+  "codice": "CORSO_RSPP_DL_BASSO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 950
+ },
+ {
+  "codice": "CORSO_RSPP_DL_BASSO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 100
+ },
+ {
+  "codice": "CORSO_RSPP_DL_MEDIO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 180
+ },
+ {
+  "codice": "CORSO_RSPP_DL_ALTO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_TRABATTELLO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_TRASP_MERC_PER",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_VERDE",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "FORM_SPEC_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 350
+ },
+ {
+  "codice": "FORM_SPEC_AGGIORNAMENTO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 45
+ },
+ {
+  "codice": "CORSO_PS_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 350
+ },
+ {
+  "codice": "CORSO_PREP_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 350
+ },
+ {
+  "codice": "CORSO_DIR_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 350
+ },
+ {
+  "codice": "CORSO_DIR_AGGIORNAMENTO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 60
+ },
+ {
+  "codice": "CORSO_RLS_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "CORSO_RLS_AGGIORNAMENTO",
+  "tipoErogazione": "E_LEARNING",
+  "costo": 70
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_BASSO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 350
+ },
+ {
+  "codice": "CORSO_QUOTA_DPI_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_PONT_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_TRABATTELLO_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_PLE_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_FUNI_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_FERETRI_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_MUL_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_CARRO_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_GRUAU_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_ESCAV_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_VERDE_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_DPI3_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_AI_3_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 500
+ },
+ {
+  "codice": "CORSO_TRASP_MERC_PER_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_FITOSAN_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 750
+ },
+ {
+  "codice": "CORSO_DISINF_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_AMBCON_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ },
+ {
+  "codice": "CORSO_FORNO_CREM_AGGIORNAMENTO",
+  "tipoErogazione": "AULA_FAD",
+  "costo": 250
+ }
+]

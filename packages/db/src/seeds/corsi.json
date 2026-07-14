@@ -1,0 +1,392 @@
+[
+ {
+  "codice": "FORM_BASE",
+  "titolo": "Formazione generale",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "FORM_SPEC_BASSO",
+  "titolo": "Formazione specifica rischio basso",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "FORM_SPEC_MEDIO",
+  "titolo": "Formazione specifica rischio medio",
+  "tipo": "FORMAZIONE",
+  "ore": 8
+ },
+ {
+  "codice": "FORM_SPEC_ALTO",
+  "titolo": "Formazione specifica rischio alto",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "FORM_BASE_SPEC_BASSO",
+  "titolo": "Formazione generale e specifica rischio basso",
+  "tipo": "FORMAZIONE",
+  "ore": 8
+ },
+ {
+  "codice": "FORM_BASE_SPEC_MEDIO",
+  "titolo": "Formazione generale e specifica rischio medio",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "FORM_BASE_SPEC_ALTO",
+  "titolo": "Formazione generale e specifica rischio alto",
+  "tipo": "FORMAZIONE",
+  "ore": 16
+ },
+ {
+  "codice": "CORSO_AI_1",
+  "titolo": "Corso antincendio liv. I",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_AI_2",
+  "titolo": "Corso antincendio liv. II",
+  "tipo": "FORMAZIONE",
+  "ore": 8
+ },
+ {
+  "codice": "CORSO_AI_3",
+  "titolo": "Corso antincendio liv. III",
+  "tipo": "FORMAZIONE",
+  "ore": 16
+ },
+ {
+  "codice": "CORSO_AMBCON",
+  "titolo": "Corso ambienti confinati",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_CARRO",
+  "titolo": "Corso carroponte",
+  "tipo": "FORMAZIONE",
+  "ore": 8
+ },
+ {
+  "codice": "CORSO_DIR",
+  "titolo": "Corso dirigente per la sicurezza",
+  "tipo": "FORMAZIONE",
+  "ore": 16
+ },
+ {
+  "codice": "CORSO_DISINF",
+  "titolo": "Corso disinfestazione",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_DPI3",
+  "titolo": "Corso uso DPI III cat.",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_ESCAV",
+  "titolo": "Corso conduzione escavatori",
+  "tipo": "FORMAZIONE",
+  "ore": 10
+ },
+ {
+  "codice": "CORSO_FERETRI",
+  "titolo": "Corso uso alzaferetri",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_FITOSAN",
+  "titolo": "Corso fitosanitari",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "CORSO_FORM",
+  "titolo": "Corso formatori sicurezza",
+  "tipo": "FORMAZIONE",
+  "ore": 24
+ },
+ {
+  "codice": "CORSO_FORNO_CREM",
+  "titolo": "Corso forno crematorio",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_FUNI",
+  "titolo": "Corso funi in sospensione",
+  "tipo": "FORMAZIONE",
+  "ore": 32
+ },
+ {
+  "codice": "CORSO_GRUAU",
+  "titolo": "Corso gru su autocarro",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "CORSO_HACCP",
+  "titolo": "Corso HACCP",
+  "tipo": "FORMAZIONE",
+  "ore": 2
+ },
+ {
+  "codice": "CORSO_MUL",
+  "titolo": "Corso uso muletto",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "CORSO_PLE",
+  "titolo": "Corso PLE",
+  "tipo": "FORMAZIONE",
+  "ore": 8
+ },
+ {
+  "codice": "CORSO_PONT",
+  "titolo": "Corso ponteggio",
+  "tipo": "FORMAZIONE",
+  "ore": 32
+ },
+ {
+  "codice": "CORSO_PREP",
+  "titolo": "Corso preposto",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "CORSO_PS",
+  "titolo": "Corso primo soccorso",
+  "tipo": "FORMAZIONE",
+  "ore": 12
+ },
+ {
+  "codice": "CORSO_QUOTA_DPI",
+  "titolo": "Corso lavori in quota e DPI III cat.",
+  "tipo": "FORMAZIONE",
+  "ore": 8
+ },
+ {
+  "codice": "CORSO_RLS",
+  "titolo": "Corso RLS",
+  "tipo": "FORMAZIONE",
+  "ore": 32
+ },
+ {
+  "codice": "CORSO_RSPP_DL_BASSO",
+  "titolo": "Corso RSPP Datore di lavoro rischio basso",
+  "tipo": "FORMAZIONE",
+  "ore": 16
+ },
+ {
+  "codice": "CORSO_RSPP_DL_MEDIO",
+  "titolo": "Corso RSPP Datore di lavoro rischio medio",
+  "tipo": "FORMAZIONE",
+  "ore": 32
+ },
+ {
+  "codice": "CORSO_RSPP_DL_ALTO",
+  "titolo": "Corso RSPP Datore di lavoro rischio alto",
+  "tipo": "FORMAZIONE",
+  "ore": 48
+ },
+ {
+  "codice": "CORSO_TRABATTELLO",
+  "titolo": "Corso trabattello",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_TRASP_MERC_PER",
+  "titolo": "Corso trasporto merci pericolose",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_VERDE",
+  "titolo": "Corso attrezzature del verde",
+  "tipo": "FORMAZIONE",
+  "ore": 4
+ },
+ {
+  "codice": "FORM_SPEC_AGGIORNAMENTO",
+  "titolo": "Aggiornamento formazione specifica",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 6
+ },
+ {
+  "codice": "CORSO_PS_AGGIORNAMENTO",
+  "titolo": "Aggiornamento primo soccorso",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 6
+ },
+ {
+  "codice": "CORSO_PREP_AGGIORNAMENTO",
+  "titolo": "Aggiornamento preposto",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 6
+ },
+ {
+  "codice": "CORSO_DIR_AGGIORNAMENTO",
+  "titolo": "Aggiornamento dirigente",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 6
+ },
+ {
+  "codice": "CORSO_RLS_AGGIORNAMENTO",
+  "titolo": "Aggiornamento RLS",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 8
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_BASSO",
+  "titolo": "Aggiornamento RSPP Datore di lavoro rischio basso",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 6
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_MEDIO",
+  "titolo": "Aggiornamento RSPP Datore di lavoro rischio medio",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 10
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_ALTO",
+  "titolo": "Aggiornamento RSPP Datore di lavoro rischio alto",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 14
+ },
+ {
+  "codice": "CORSO_FORM_AGGIORNAMENTO",
+  "titolo": "Aggiornamento formatori",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 24
+ },
+ {
+  "codice": "CORSO_QUOTA_DPI_AGGIORNAMENTO",
+  "titolo": "Aggiornamento lavori in quota + DPI III cat",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_PONT_AGGIORNAMENTO",
+  "titolo": "Aggiornamento ponteggio",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_TRABATTELLO_AGGIORNAMENTO",
+  "titolo": "Aggiornamento trabattello",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_PLE_AGGIORNAMENTO",
+  "titolo": "Aggiornamento PLE",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_FUNI_AGGIORNAMENTO",
+  "titolo": "Aggiornamento funi in sospensione",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_FERETRI_AGGIORNAMENTO",
+  "titolo": "Aggiornamento alzaferetri",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_MUL_AGGIORNAMENTO",
+  "titolo": "Aggiornamento carrello elevatore",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_CARRO_AGGIORNAMENTO",
+  "titolo": "Aggiornamento carroponte",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_GRUAU_AGGIORNAMENTO",
+  "titolo": "Aggiornamento gru su autocarro",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_ESCAV_AGGIORNAMENTO",
+  "titolo": "Aggiornamento escavatori",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_VERDE_AGGIORNAMENTO",
+  "titolo": "Aggiornamento attrezzature del verde",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_DPI3_AGGIORNAMENTO",
+  "titolo": "Aggiornamento DPI III cat",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_AI_1_AGGIORNAMENTO",
+  "titolo": "Aggiornamento antincendio livello I",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 2
+ },
+ {
+  "codice": "CORSO_AI_2_AGGIORNAMENTO",
+  "titolo": "Aggiornamento antincendio livello II",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 5
+ },
+ {
+  "codice": "CORSO_AI_3_AGGIORNAMENTO",
+  "titolo": "Aggiornamento antincendio livello III",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 8
+ },
+ {
+  "codice": "CORSO_TRASP_MERC_PER_AGGIORNAMENTO",
+  "titolo": "Aggiornamento trasporto merci pericolose",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_FITOSAN_AGGIORNAMENTO",
+  "titolo": "Aggiornamento fitosanitari",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 12
+ },
+ {
+  "codice": "CORSO_DISINF_AGGIORNAMENTO",
+  "titolo": "Aggiornamento disinfestazione",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_AMBCON_AGGIORNAMENTO",
+  "titolo": "Aggiornamento ambienti confinati",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ },
+ {
+  "codice": "CORSO_FORNO_CREM_AGGIORNAMENTO",
+  "titolo": "Aggiornamento forno crematorio",
+  "tipo": "AGGIORNAMENTO",
+  "ore": 4
+ }
+]

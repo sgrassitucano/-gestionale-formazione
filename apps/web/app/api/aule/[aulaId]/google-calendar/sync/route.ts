@@ -14,7 +14,7 @@ export async function POST(
   { params }: { params: { aulaId: string } }
 ) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

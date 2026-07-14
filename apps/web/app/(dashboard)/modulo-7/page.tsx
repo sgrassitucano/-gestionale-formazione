@@ -5,65 +5,54 @@ import axios from "axios";
 import { Download, ChevronDown, ChevronUp, Landmark } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
+function currentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export default function Modulo7Page() {
-  const [aule, setAule] = useState<any[]>([]);
-  const [selectedAula, setSelectedAula] = useState("");
+  const [mese, setMese] = useState(currentMonth());
   const [drillDown, setDrillDown] = useState<any[]>([]);
   const [expandedCantiere, setExpandedCantiere] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/api/aule").then((res) => setAule(res.data.aule || [])).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
     loadCentriCosto();
-  }, [selectedAula]);
+  }, [mese]);
 
   const loadCentriCosto = async () => {
-    const params: any = {};
-    if (selectedAula) params.aulaId = selectedAula;
-    const res = await axios.get("/api/reports/centri-costo", { params });
-    setDrillDown(res.data.drillDown || []);
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/reports/centri-costo", { params: { mese } });
+      setDrillDown(res.data.drillDown || []);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = () => {
-    const params = new URLSearchParams();
-    if (selectedAula) params.append("aulaId", selectedAula);
-    params.append("format", "xlsx");
+    const params = new URLSearchParams({ mese, format: "xlsx" });
     window.open(`/api/reports/centri-costo?${params.toString()}`, "_blank");
   };
 
   const totale = drillDown.reduce((sum, c) => sum + c.totale, 0);
 
-  if (loading) return <div className="text-muted-foreground">Loading...</div>;
-
   return (
     <div className="max-w-4xl">
       <h1 className="text-2xl font-bold text-foreground mb-1">Centri di Costo</h1>
-      <p className="text-sm text-muted-foreground mb-6">Distribuzione costi per cantiere</p>
+      <p className="text-sm text-muted-foreground mb-6">Distribuzione costi per cantiere, aggregata per mese</p>
 
       <Card className="mb-6">
         <CardContent className="p-4 flex gap-4 items-end">
-          <div className="flex-1 space-y-1.5">
-            <Label>Seleziona Aula</Label>
-            <select
-              value={selectedAula}
-              onChange={(e) => setSelectedAula(e.target.value)}
-              className="w-full flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
-            >
-              <option value="">Tutte le aule (AULA_FAD chiuse)</option>
-              {aule.map((a: any) => (
-                <option key={a.id} value={a.id}>{a.corso?.titolo} — {a.luogo}</option>
-              ))}
-            </select>
+          <div className="space-y-1.5">
+            <Label>Mese</Label>
+            <Input type="month" value={mese} onChange={(e) => setMese(e.target.value)} />
           </div>
-          <Button variant="success" onClick={handleExport}>
-            <Download className="h-4 w-4" /> Export XLS
-          </Button>
+          <Button variant="success" onClick={handleExport}><Download className="h-4 w-4" /> Export XLS</Button>
         </CardContent>
       </Card>
 
@@ -79,10 +68,12 @@ export default function Modulo7Page() {
         </CardContent>
       </Card>
 
-      {drillDown.length === 0 ? (
+      {loading ? (
+        <div className="text-muted-foreground">Loading...</div>
+      ) : drillDown.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground text-sm">
-            Nessun dato disponibile. Chiudi un'aula AULA_FAD per generare centri costo.
+            Nessun dato disponibile per questo mese.
           </CardContent>
         </Card>
       ) : (

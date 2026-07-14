@@ -27,7 +27,7 @@
     "@types/node": "^20.0.0"
   },
   "dependencies": {
-    "@gestionale/types": "workspace:*",
+    "@gestionale/types": "*",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "xlsx": "^0.18.5",

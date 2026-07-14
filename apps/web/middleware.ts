@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "./lib/auth";
+import { verifyToken } from "./lib/jwt";
 import { getSessionToken } from "./lib/session";
 
 export function middleware(request: NextRequest) {
@@ -7,7 +7,8 @@ export function middleware(request: NextRequest) {
 
   // Skip middleware for auth routes and static files
   if (
-    pathname.startsWith("/(auth)") ||
+    pathname === "/login" ||
+    pathname === "/logout" ||
     pathname.startsWith("/api/auth/login") ||
     pathname.startsWith("/api/auth/signup") ||
     pathname.startsWith("/_next") ||

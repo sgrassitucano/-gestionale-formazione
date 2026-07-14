@@ -7,16 +7,15 @@ import { LogoWithText } from "@/components/ui/logo";
 import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard,
-  Upload,
   School,
   FileText,
   Receipt,
   BarChart3,
   Landmark,
-  ShieldCheck,
   ScrollText,
   Users,
   Settings,
+  DollarSign,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -25,21 +24,18 @@ interface SidebarProps {
 }
 
 const MODULE_ICONS: Record<number, any> = {
-  1: ShieldCheck,
-  2: Upload,
-  3: School,
-  4: FileText,
-  5: Receipt,
-  6: BarChart3,
-  7: Landmark,
+  1: School,
+  2: FileText,
+  3: Receipt,
+  4: BarChart3,
+  5: Landmark,
 };
 
 export function Sidebar({ user, modules }: SidebarProps) {
   const pathname = usePathname();
   const visibleModules = modules.filter((m) => m.visible);
 
-  const isActive = (route: string, moduleId?: number) =>
-    pathname === route || (moduleId ? pathname.includes(`modulo-${moduleId}`) : false);
+  const isActive = (route: string) => pathname === route || pathname.startsWith(`${route}/`);
 
   const NavLink = ({
     href,
@@ -83,7 +79,7 @@ export function Sidebar({ user, modules }: SidebarProps) {
         {visibleModules.map((mod) => {
           const Icon = MODULE_ICONS[mod.id] || FileText;
           return (
-            <NavLink key={mod.id} href={mod.route} icon={Icon} active={isActive(mod.route, mod.id)}>
+            <NavLink key={mod.id} href={mod.route} icon={Icon} active={isActive(mod.route)}>
               {mod.name}
             </NavLink>
           );
@@ -94,14 +90,20 @@ export function Sidebar({ user, modules }: SidebarProps) {
             <p className="px-3 pt-4 pb-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
               Admin
             </p>
-            <NavLink href="/admin/audit-log" icon={ScrollText} active={isActive("/admin/audit-log")}>
-              Audit Log
-            </NavLink>
             <NavLink href="/admin/utenti" icon={Users} active={isActive("/admin/utenti")}>
               Utenti
             </NavLink>
+            <NavLink href="/admin/permissions" icon={ScrollText} active={isActive("/admin/permissions")}>
+              Permessi
+            </NavLink>
+            <NavLink href="/admin/listino-prezzi" icon={DollarSign} active={isActive("/admin/listino-prezzi")}>
+              Listino Prezzi
+            </NavLink>
             <NavLink href="/admin/impostazioni" icon={Settings} active={isActive("/admin/impostazioni")}>
               Impostazioni
+            </NavLink>
+            <NavLink href="/admin/audit-log" icon={ScrollText} active={isActive("/admin/audit-log")}>
+              Audit Log
             </NavLink>
           </>
         )}

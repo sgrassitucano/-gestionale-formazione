@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { z } from "zod";
+
+const updateTemplateSchema = z.object({
+  nome: z.string().min(1),
+});
 
 export async function GET(
   request: NextRequest,
@@ -21,12 +26,39 @@ export async function GET(
   return NextResponse.json({ success: true, template });
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { templateId: string } }
+) {
+  const user = getSessionUserFromRequest(request);
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const { nome } = updateTemplateSchema.parse(body);
+
+    const template = await db.template.update({
+      where: { id: params.templateId },
+      data: { nome },
+    });
+
+    return NextResponse.json({ success: true, template });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { templateId: string } }
 ) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

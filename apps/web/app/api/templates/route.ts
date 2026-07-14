@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

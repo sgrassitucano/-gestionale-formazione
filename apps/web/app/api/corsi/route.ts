@@ -10,6 +10,7 @@ const createCorsoSchema = z.object({
   oreAula: z.number().min(1),
   oreElearning: z.number().min(0).default(0),
   validitaAnni: z.number().min(1),
+  modalitaConsentite: z.array(z.enum(["PRESENZA", "FAD_SINCRONA", "FAD_ASINCRONA"])).default([]),
 });
 
 export async function GET(request: NextRequest) {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = getSessionUserFromRequest(request);
 
-    if (!user || user.ruolo !== "SEGRETERIA") {
+    if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
         oreAula: data.oreAula,
         oreElearning: data.oreElearning,
         validitaAnni: data.validitaAnni,
+        modalitaConsentite: data.modalitaConsentite,
       },
     });
 

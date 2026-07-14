@@ -17,7 +17,6 @@ export async function GET(
       iscrizioni: { where: { deletedAt: null }, include: { discente: true } },
       docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
       archivio: { where: { deletedAt: null } },
-      bilancioSnapshot: true,
     },
   });
 
@@ -33,7 +32,7 @@ export async function PUT(
   { params }: { params: { aulaId: string } }
 ) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

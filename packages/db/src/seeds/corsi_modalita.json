@@ -1,0 +1,435 @@
+[
+ {
+  "codice": "FORM_BASE",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "FORM_SPEC_BASSO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "FORM_SPEC_MEDIO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "FORM_SPEC_ALTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "FORM_BASE_SPEC_BASSO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "FORM_BASE_SPEC_MEDIO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "FORM_BASE_SPEC_ALTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_AI_1",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_AI_2",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_AI_3",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_AMBCON",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_CARRO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_DIR",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_DISINF",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_DPI3",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_ESCAV",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FERETRI",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FITOSAN",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FORM",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FORNO_CREM",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FUNI",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_GRUAU",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_HACCP",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_MUL",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_PLE",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_PONT",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_PREP",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_PS",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_QUOTA_DPI",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_RLS",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RSPP_DL_BASSO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RSPP_DL_MEDIO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RSPP_DL_ALTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_TRABATTELLO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_TRASP_MERC_PER",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_VERDE",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "FORM_SPEC_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_PS_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_PREP_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_DIR_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RLS_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_BASSO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_MEDIO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_RSPP_DL_AGGIORNAMENTO_ALTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA",
+   "FAD_ASINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_FORM_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_QUOTA_DPI_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_PONT_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_TRABATTELLO_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_PLE_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FUNI_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FERETRI_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_MUL_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_CARRO_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_GRUAU_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_ESCAV_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_VERDE_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_DPI3_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_AI_1_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_AI_2_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_AI_3_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_TRASP_MERC_PER_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FITOSAN_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_DISINF_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA",
+   "FAD_SINCRONA"
+  ]
+ },
+ {
+  "codice": "CORSO_AMBCON_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ },
+ {
+  "codice": "CORSO_FORNO_CREM_AGGIORNAMENTO",
+  "modalita": [
+   "PRESENZA"
+  ]
+ }
+]

@@ -8,13 +8,11 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 
 const RUOLI = ["SUPERADMIN", "SEGRETERIA", "AMMINISTRAZIONE", "VISUALIZZATORE"];
 const MODULI = [
-  { id: 1, name: "Autenticazione" },
-  { id: 2, name: "Importazione" },
-  { id: 3, name: "Aule" },
-  { id: 4, name: "Modulistica" },
-  { id: 5, name: "Prefatturazione" },
-  { id: 6, name: "Report" },
-  { id: 7, name: "Centri Costo" },
+  { id: 1, name: "Aule" },
+  { id: 2, name: "Modulistica" },
+  { id: 3, name: "Prefatturazione" },
+  { id: 4, name: "Report" },
+  { id: 5, name: "Centri Costo" },
 ];
 
 export default function PermissionsPage() {
@@ -75,8 +73,10 @@ export default function PermissionsPage() {
                       <button
                         onClick={() => ruolo !== "SUPERADMIN" && handleToggle(ruolo, mod.id)}
                         disabled={ruolo === "SUPERADMIN"}
-                        className={`h-5 w-9 rounded-full transition-colors relative ${
-                          ruolo === "SUPERADMIN" || isVisible(ruolo, mod.id) ? "bg-primary" : "bg-secondary"
+                        className={`h-5 w-9 rounded-full border transition-colors relative ${
+                          ruolo === "SUPERADMIN" || isVisible(ruolo, mod.id)
+                            ? "bg-primary border-primary"
+                            : "bg-muted border-input"
                         } ${ruolo === "SUPERADMIN" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       >
                         <span

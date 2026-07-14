@@ -53,3 +53,7 @@ postgres_data/
 # Temp
 *.tmp
 .cache/
+*.tsbuildinfo
+
+# Claude Code local settings
+.claude/

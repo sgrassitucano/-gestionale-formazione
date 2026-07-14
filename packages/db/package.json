@@ -13,7 +13,9 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "node --loader tsx src/seeds/seed.ts",
+    "db:seed": "node --import tsx src/seeds/seed.ts",
+    "db:seed:corsi": "node --import tsx src/seeds/seedCorsi.ts",
+    "db:seed:listini": "node --import tsx src/seeds/seedListini.ts",
     "db:reset": "prisma migrate reset",
     "db:status": "prisma migrate status",
     "db:push": "prisma db push"
@@ -26,8 +28,9 @@
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
-    "@gestionale/types": "workspace:*",
-    "@gestionale/utils": "workspace:*",
-    "tweetnacl": "^1.0.3"
+    "@gestionale/types": "*",
+    "@gestionale/utils": "*",
+    "tweetnacl": "^1.0.3",
+    "bcryptjs": "^2.4.3"
   }
 }

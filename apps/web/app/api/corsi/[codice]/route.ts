@@ -8,6 +8,7 @@ const updateCorsoSchema = z.object({
   oreAula: z.number().min(1).optional(),
   oreElearning: z.number().min(0).optional(),
   validitaAnni: z.number().min(1).optional(),
+  modalitaConsentite: z.array(z.enum(["PRESENZA", "FAD_SINCRONA", "FAD_ASINCRONA"])).optional(),
 });
 
 export async function GET(
@@ -55,7 +56,7 @@ export async function PUT(
   try {
     const user = getSessionUserFromRequest(request);
 
-    if (!user || user.ruolo !== "SEGRETERIA") {
+    if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
@@ -97,7 +98,7 @@ export async function DELETE(
   try {
     const user = getSessionUserFromRequest(request);
 
-    if (!user || user.ruolo !== "SEGRETERIA") {
+    if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }

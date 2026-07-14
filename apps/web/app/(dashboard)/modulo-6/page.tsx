@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { School, Users, Wallet, TrendingUp } from "lucide-react";
+import { School, Users, Wallet, TrendingUp, Download } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 const COLORS = [
   "hsl(199 89% 30%)",
@@ -33,9 +34,126 @@ const COLORS = [
   "hsl(340 75% 55%)",
 ];
 
+export default function Modulo6Page() {
+  const [tab, setTab] = useState<"bilancio" | "kpi">("bilancio");
+
+  return (
+    <div className="max-w-6xl">
+      <h1 className="text-2xl font-bold text-foreground mb-1">Report</h1>
+      <p className="text-sm text-muted-foreground mb-6">Bilancio aule e dashboard KPI</p>
+
+      <div className="flex gap-1 mb-6 bg-secondary/60 p-1 rounded-lg w-fit">
+        <Button variant={tab === "bilancio" ? "default" : "ghost"} size="sm" onClick={() => setTab("bilancio")}>Bilancio Aule</Button>
+        <Button variant={tab === "kpi" ? "default" : "ghost"} size="sm" onClick={() => setTab("kpi")}>KPI Dashboard</Button>
+      </div>
+
+      {tab === "bilancio" ? <BilancioTab /> : <KpiTab />}
+    </div>
+  );
+}
+
+function BilancioTab() {
+  const [mese, setMese] = useState("");
+  const [corso, setCorso] = useState("");
+  const [corsi, setCorsi] = useState<any[]>([]);
+  const [report, setReport] = useState<any[]>([]);
+  const [totals, setTotals] = useState({ ricavo: 0, costo: 0, margine: 0 });
+
+  useEffect(() => {
+    axios.get("/api/corsi").then((res) => setCorsi(res.data.corsi || []));
+    load();
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [mese, corso]);
+
+  const load = async () => {
+    const params: any = {};
+    if (mese) params.mese = mese;
+    if (corso) params.corso = corso;
+    const res = await axios.get("/api/reports/prefatturazione", { params });
+    setReport(res.data.report || []);
+    setTotals(res.data.totals || { ricavo: 0, costo: 0, margine: 0 });
+  };
+
+  const handleExport = () => {
+    const params = new URLSearchParams();
+    if (mese) params.append("mese", mese);
+    if (corso) params.append("corso", corso);
+    params.append("format", "xlsx");
+    window.open(`/api/reports/prefatturazione?${params.toString()}`, "_blank");
+  };
+
+  return (
+    <div>
+      <Card className="mb-6">
+        <CardContent className="p-4 flex gap-4 items-end flex-wrap">
+          <div className="space-y-1.5">
+            <Label>Mese</Label>
+            <Input type="month" value={mese} onChange={(e) => setMese(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Corso</Label>
+            <select value={corso} onChange={(e) => setCorso(e.target.value)} className="flex h-10 rounded-md border border-input bg-card px-3 py-2 text-sm">
+              <option value="">Tutti</option>
+              {corsi.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
+            </select>
+          </div>
+          <Button variant="success" onClick={handleExport}><Download className="h-4 w-4" /> Export XLS</Button>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <StatCard label="Ricavo Totale" value={totals.ricavo} color="text-success" />
+        <StatCard label="Costo Totale" value={totals.costo} color="text-destructive" />
+        <StatCard label="Margine Totale" value={totals.margine} color="text-primary" />
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Corso</TableHead>
+            <TableHead>Discenti</TableHead>
+            <TableHead>Ricavo</TableHead>
+            <TableHead>Costo</TableHead>
+            <TableHead>Margine</TableHead>
+            <TableHead>%</TableHead>
+            <TableHead>Data Aula</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {report.map((r) => (
+            <TableRow key={r.aulaId}>
+              <TableCell className="font-medium">{r.corso}</TableCell>
+              <TableCell>{r.discentiCount}</TableCell>
+              <TableCell className="text-success">€ {r.ricavo.toFixed(2)}</TableCell>
+              <TableCell className="text-destructive">€ {r.costo.toFixed(2)}</TableCell>
+              <TableCell className="font-semibold">€ {r.margine.toFixed(2)}</TableCell>
+              <TableCell>{r.marginePct.toFixed(1)}%</TableCell>
+              <TableCell>{r.dataInizio ? new Date(r.dataInizio).toLocaleDateString("it-IT") : "-"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function StatCard({ label, value, color }: any) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-xs text-muted-foreground font-medium">{label}</p>
+        <p className={`text-2xl font-bold ${color}`}>€ {value.toFixed(2)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 type RangePreset = "30" | "60" | "90" | "custom";
 
-export default function Modulo6Page() {
+function KpiTab() {
   const [preset, setPreset] = useState<RangePreset>("30");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -79,10 +197,7 @@ export default function Modulo6Page() {
   const barData = kpi ? Object.entries(kpi.marginePerTipo).map(([name, value]) => ({ name, margine: value })) : [];
 
   return (
-    <div className="max-w-6xl">
-      <h1 className="text-2xl font-bold text-foreground mb-1">Report + KPI</h1>
-      <p className="text-sm text-muted-foreground mb-6">Dashboard analitico e trend</p>
-
+    <div>
       <Card className="mb-6">
         <CardContent className="p-4 flex gap-4 items-end flex-wrap">
           <div>

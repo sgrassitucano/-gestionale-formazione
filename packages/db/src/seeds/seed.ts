@@ -35,7 +35,7 @@ async function main() {
       Ruolo.AMMINISTRAZIONE,
       Ruolo.VISUALIZZATORE,
     ];
-    const modules = [1, 2, 3, 4, 5, 6, 7];
+    const modules = [1, 2, 3, 4, 5]; // Aule, Modulistica, Prefatturazione, Report, Centri Costo
 
     for (const role of roles) {
       for (const moduloId of modules) {

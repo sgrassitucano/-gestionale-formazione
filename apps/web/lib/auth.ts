@@ -25,7 +25,7 @@ export async function createUser(
     });
 
     // Seed module permissions for this role
-    const modules = [1, 2, 3, 4, 5, 6, 7];
+    const modules = [1, 2, 3, 4, 5];
     for (const moduloId of modules) {
       await db.moduloPermesso.upsert({
         where: {

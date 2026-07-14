@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: { aulaId: string } }
 ) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -78,7 +78,7 @@ export async function POST(
       filename = `${template.nome}_${aula.id}.html`;
     }
 
-    return new NextResponse(outputBuffer, {
+    return new NextResponse(new Uint8Array(outputBuffer), {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${filename}"`,

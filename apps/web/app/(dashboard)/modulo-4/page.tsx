@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Upload, Info, School } from "lucide-react";
+import { Upload, Info, School, Pencil, Trash2, Check, X, Save, ListChecks, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,12 @@ export default function Modulo4Page() {
   const [nome, setNome] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [extractedFields, setExtractedFields] = useState<any[]>([]);
+  const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
+  const [savingMappings, setSavingMappings] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -58,6 +64,7 @@ export default function Modulo4Page() {
       const res = await axios.post("/api/templates", formData);
       setExtractedFields(res.data.extractedFields || []);
       setSelectedTemplate(res.data.template);
+      setFieldMappings({});
       setFile(null);
       setNome("");
       loadTemplates();
@@ -68,8 +75,81 @@ export default function Modulo4Page() {
     }
   };
 
-  const handleFieldMapping = async (templateId: string, nomeCampo: string, sorgenteDato: string) => {
-    await axios.put(`/api/templates/${templateId}/campi`, { nomeCampo, sorgenteDato });
+  const handleSaveMappings = async () => {
+    if (!selectedTemplate) return;
+    setSavingMappings(true);
+    try {
+      for (const field of extractedFields) {
+        const sorgenteDato = fieldMappings[field.nomeCampo];
+        if (sorgenteDato) {
+          await axios.put(`/api/templates/${selectedTemplate.id}/campi`, {
+            nomeCampo: field.nomeCampo,
+            sorgenteDato,
+          });
+        }
+      }
+      loadTemplates();
+    } finally {
+      setSavingMappings(false);
+    }
+  };
+
+  const startRename = (t: any) => {
+    setEditingId(t.id);
+    setEditName(t.nome);
+  };
+
+  const cancelRename = () => {
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const saveRename = async (templateId: string) => {
+    if (!editName.trim()) return;
+    await axios.put(`/api/templates/${templateId}`, { nome: editName.trim() });
+    setEditingId(null);
+    setEditName("");
+    loadTemplates();
+  };
+
+  const startEditFields = (t: any) => {
+    setSelectedTemplate(t);
+    setExtractedFields((t.campi || []).map((c: any) => ({ nomeCampo: c.nomeCampo, placeholder: c.placeholder })));
+    setFieldMappings(
+      Object.fromEntries((t.campi || []).map((c: any) => [c.nomeCampo, c.sorgenteDato || ""]))
+    );
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handlePreview = async (t: any) => {
+    setPreviewLoading(t.id);
+    try {
+      if (t.mimeType.includes("wordprocessingml")) {
+        const res = await axios.get(`/api/templates/${t.id}/preview`, { responseType: "blob" });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `anteprima_${t.nome}.docx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        const res = await axios.get(`/api/templates/${t.id}/preview`);
+        setPreviewHtml(res.data.html);
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.error || "Anteprima non disponibile");
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!confirm("Eliminare questo template?")) return;
+    await axios.delete(`/api/templates/${templateId}`);
+    if (selectedTemplate?.id === templateId) {
+      setSelectedTemplate(null);
+      setExtractedFields([]);
+    }
     loadTemplates();
   };
 
@@ -105,28 +185,45 @@ export default function Modulo4Page() {
             </Button>
           </div>
 
-          {extractedFields.length > 0 && selectedTemplate && (
+          {selectedTemplate && (
             <div className="mt-6 pt-4 border-t border-border">
-              <p className="font-semibold text-foreground mb-2 text-sm">
-                Campi rilevati ({extractedFields.length}) — Associa ogni campo a un dato:
-              </p>
-              <div className="space-y-2">
-                {extractedFields.map((field: any) => (
-                  <div key={field.nomeCampo} className="flex items-center gap-2">
-                    <span className="text-xs font-mono bg-secondary px-2 py-1.5 rounded w-1/3 truncate">
-                      {field.placeholder}
-                    </span>
-                    <select
-                      onChange={(e) => handleFieldMapping(selectedTemplate.id, field.nomeCampo, e.target.value)}
-                      className="flex-1 h-9 rounded-md border border-input bg-card px-2 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="">-- seleziona dato --</option>
-                      {SORGENTI_DATI.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                    </select>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold text-foreground text-sm">
+                  Campi di "{selectedTemplate.nome}" ({extractedFields.length}) — Associa ogni campo a un dato:
+                </p>
+                <Button size="sm" variant="ghost" onClick={() => { setSelectedTemplate(null); setExtractedFields([]); setFieldMappings({}); }}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
               </div>
+              {extractedFields.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nessun campo rilevato in questo template. Aggiungi placeholder <code className="bg-secondary px-1.5 py-0.5 rounded text-xs font-mono">{"{{nome_campo}}"}</code> nel documento e ricaricalo.
+                </p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {extractedFields.map((field: any) => (
+                      <div key={field.nomeCampo} className="flex items-center gap-2">
+                        <span className="text-xs font-mono bg-secondary px-2 py-1.5 rounded w-1/3 truncate">
+                          {field.placeholder}
+                        </span>
+                        <select
+                          value={fieldMappings[field.nomeCampo] ?? ""}
+                          onChange={(e) => setFieldMappings({ ...fieldMappings, [field.nomeCampo]: e.target.value })}
+                          className="flex-1 h-9 rounded-md border border-input bg-card px-2 text-sm"
+                        >
+                          <option value="">-- seleziona dato --</option>
+                          {SORGENTI_DATI.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <Button onClick={handleSaveMappings} disabled={savingMappings} variant="success" className="mt-3 w-full">
+                    <Save className="h-4 w-4" />
+                    {savingMappings ? "Salvataggio..." : "Salva Mappature"}
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </CardContent>
@@ -139,15 +236,53 @@ export default function Modulo4Page() {
             <TableHead>Tipo</TableHead>
             <TableHead>Campi</TableHead>
             <TableHead>Corsi Mappati</TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {templates.map((t) => (
             <TableRow key={t.id}>
-              <TableCell className="font-medium">{t.nome}</TableCell>
+              <TableCell className="font-medium">
+                {editingId === t.id ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-8"
+                      autoFocus
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => saveRename(t.id)}>
+                      <Check className="h-3.5 w-3.5 text-success" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={cancelRename}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  t.nome
+                )}
+              </TableCell>
               <TableCell><Badge variant="secondary">{t.mimeType.split("/").pop()}</Badge></TableCell>
               <TableCell>{t.campi?.length || 0} campi</TableCell>
               <TableCell>{t.mappings?.length || 0} corsi</TableCell>
+              <TableCell>
+                {editingId !== t.id && (
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => handlePreview(t)} disabled={previewLoading === t.id} title="Anteprima">
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => startEditFields(t)} title="Modifica Campi">
+                      <ListChecks className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => startRename(t)} title="Rinomina">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDeleteTemplate(t.id)} className="text-destructive hover:bg-destructive/10" title="Elimina">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -157,11 +292,25 @@ export default function Modulo4Page() {
         <CardContent className="p-4 flex items-start gap-2 text-sm">
           <School className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
           <span className="text-muted-foreground">
-            Vai in un'Aula (Modulo 3) → tab "Modulistica" per generare documenti pre-compilati
-            e caricare registri/verbali/attestati.
+            Il mapping Template↔Corso↔Modalità si gestisce in Aule → Anagrafica Corsi.
+            La generazione documenti avviene dal dettaglio Aula → tab "Modulistica".
           </span>
         </CardContent>
       </Card>
+
+      {previewHtml !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50" onClick={() => setPreviewHtml(null)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <p className="font-semibold text-foreground text-sm">Anteprima (dati di esempio)</p>
+              <Button size="sm" variant="ghost" onClick={() => setPreviewHtml(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="overflow-auto p-6" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

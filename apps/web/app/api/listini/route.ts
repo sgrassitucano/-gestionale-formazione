@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "AMMINISTRAZIONE") {
+  if (!user || !("AMMINISTRAZIONE" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

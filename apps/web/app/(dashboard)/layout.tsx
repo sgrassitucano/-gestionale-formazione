@@ -9,23 +9,19 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { UserMenu } from "@/components/layout/UserMenu";
 
 const MODULE_NAMES: Record<number, string> = {
-  1: "Autenticazione",
-  2: "Importazione",
-  3: "Aule + Calendario",
-  4: "Modulistica",
-  5: "Prefatturazione",
-  6: "Report + KPI",
-  7: "Centri Costo",
+  1: "Aule",
+  2: "Modulistica",
+  3: "Prefatturazione",
+  4: "Report",
+  5: "Centri Costo",
 };
 
 const MODULE_ROUTES: Record<number, string> = {
-  1: "/admin/permissions",
-  2: "/modulo-2/importazione",
-  3: "/modulo-3/aule",
-  4: "/modulo-4",
-  5: "/modulo-5",
-  6: "/modulo-6",
-  7: "/modulo-7",
+  1: "/modulo-3/aule",
+  2: "/modulo-4",
+  3: "/modulo-5",
+  4: "/modulo-6",
+  5: "/modulo-7",
 };
 
 export default function DashboardLayout({

@@ -22,7 +22,7 @@ export async function parseXlsxFile(buffer: Buffer): Promise<XlsxParseResult> {
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
 
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
     const errors: Array<{ line: number; message: string }> = [];
 
     // Validate headers

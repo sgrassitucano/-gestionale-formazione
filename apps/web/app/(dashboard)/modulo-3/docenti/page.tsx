@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Plus, X } from "lucide-react";
+import { AuleSubNav } from "@/components/layout/AuleSubNav";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export default function DocentiPage() {
   const [docenti, setDocenti] = useState<any[]>([]);
@@ -24,61 +31,72 @@ export default function DocentiPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await axios.post("/api/docenti", form);
-      setForm({ nome: "", cognome: "", email: "", tariffaOraria: 0 });
-      setShowForm(false);
-      load();
-    } catch (error: any) {
-      alert(error.response?.data?.error || "Errore creazione docente");
-    }
+    await axios.post("/api/docenti", form);
+    setForm({ nome: "", cognome: "", email: "", tariffaOraria: 0 });
+    setShowForm(false);
+    load();
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="text-muted-foreground">Loading...</div>;
 
   return (
     <div className="max-w-3xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Docenti</h1>
-        <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+      <h1 className="text-2xl font-bold text-foreground mb-1">Aule</h1>
+      <p className="text-sm text-muted-foreground mb-4">Anagrafica corsi, docenti e gestione aule</p>
+      <AuleSubNav />
+
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-foreground">Anagrafica Docenti</h2>
+        <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"}>
+          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showForm ? "Annulla" : "Nuovo Docente"}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="grid grid-cols-2 gap-4">
-            <input type="text" placeholder="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="border px-3 py-2 rounded" required />
-            <input type="text" placeholder="Cognome" value={form.cognome} onChange={(e) => setForm({ ...form, cognome: e.target.value })} className="border px-3 py-2 rounded" required />
-            <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="border px-3 py-2 rounded" required />
-            <input type="number" step="0.01" placeholder="Tariffa Oraria €" value={form.tariffaOraria} onChange={(e) => setForm({ ...form, tariffaOraria: parseFloat(e.target.value) })} className="border px-3 py-2 rounded" required />
-          </div>
-          <button type="submit" className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-            Crea Docente
-          </button>
-        </form>
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <form onSubmit={handleCreate} className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Nome</Label>
+                <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Cognome</Label>
+                <Input value={form.cognome} onChange={(e) => setForm({ ...form, cognome: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tariffa Oraria €</Label>
+                <Input type="number" step="0.01" value={form.tariffaOraria} onChange={(e) => setForm({ ...form, tariffaOraria: parseFloat(e.target.value) })} required />
+              </div>
+              <Button type="submit" variant="success" className="col-span-2">Crea Docente</Button>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Nome</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Email</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Tariffa/h</th>
-            </tr>
-          </thead>
-          <tbody>
-            {docenti.map((d) => (
-              <tr key={d.id} className="border-t">
-                <td className="px-6 py-3 text-sm">{d.cognome} {d.nome}</td>
-                <td className="px-6 py-3 text-sm">{d.email}</td>
-                <td className="px-6 py-3 text-sm">€ {Number(d.tariffaOraria).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Tariffa/h</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {docenti.map((d) => (
+            <TableRow key={d.id}>
+              <TableCell className="font-medium">{d.cognome} {d.nome}</TableCell>
+              <TableCell>{d.email}</TableCell>
+              <TableCell>€ {Number(d.tariffaOraria).toFixed(2)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

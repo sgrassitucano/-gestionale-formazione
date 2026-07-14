@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const createMappingSchema = z.object({
   corsoCodec: z.string(),
+  modalita: z.enum(["PRESENZA", "FAD_SINCRONA", "FAD_ASINCRONA"]).nullable().optional(),
 });
 
 export async function GET(
@@ -27,18 +28,19 @@ export async function POST(
   { params }: { params: { templateId: string } }
 ) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const { corsoCodec } = createMappingSchema.parse(body);
+    const { corsoCodec, modalita } = createMappingSchema.parse(body);
 
     const mapping = await db.templateMapping.create({
       data: {
         templateId: params.templateId,
         corsoCodec,
+        modalita: modalita || null,
       },
     });
 
@@ -56,19 +58,20 @@ export async function DELETE(
   { params }: { params: { templateId: string } }
 ) {
   const user = getSessionUserFromRequest(request);
-  if (!user || user.ruolo !== "SEGRETERIA") {
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);
   const corsoCodec = searchParams.get("corsoCodec");
+  const modalita = searchParams.get("modalita");
 
   if (!corsoCodec) {
     return NextResponse.json({ error: "corsoCodec required" }, { status: 400 });
   }
 
   await db.templateMapping.deleteMany({
-    where: { templateId: params.templateId, corsoCodec },
+    where: { templateId: params.templateId, corsoCodec, modalita: (modalita as any) || null },
   });
 
   return NextResponse.json({ success: true });
