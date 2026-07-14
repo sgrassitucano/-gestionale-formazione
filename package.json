@@ -19,6 +19,7 @@
     "db:reset": "turbo run db:reset --filter=db",
     "db:status": "turbo run db:status --filter=db"
   },
+  "packageManager": "npm@11.13.0",
   "devDependencies": {
     "turbo": "^2.0.0"
   },
