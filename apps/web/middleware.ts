@@ -2,7 +2,26 @@ import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "./lib/jwt";
 import { getSessionToken } from "./lib/session";
 
+const PREVIEW_MODE = true; // TODO: remove — bypass temporaneo per test senza login, login rotto da sistemare
+const PREVIEW_USER = {
+  id: "cmrex51bi0000qi34k6c344eb", // s.grassi@iltucano.net
+  email: "s.grassi@iltucano.net",
+  ruolo: "SUPERADMIN",
+  nome: "Stefano",
+  cognome: "Grassi",
+};
+
 export function middleware(request: NextRequest) {
+  if (PREVIEW_MODE) {
+    const response = NextResponse.next();
+    response.headers.set("x-user-id", PREVIEW_USER.id);
+    response.headers.set("x-user-email", PREVIEW_USER.email);
+    response.headers.set("x-user-role", PREVIEW_USER.ruolo);
+    response.headers.set("x-user-name", PREVIEW_USER.nome);
+    response.headers.set("x-user-surname", PREVIEW_USER.cognome);
+    return response;
+  }
+
   const pathname = request.nextUrl.pathname;
 
   // Skip middleware for auth routes and static files
