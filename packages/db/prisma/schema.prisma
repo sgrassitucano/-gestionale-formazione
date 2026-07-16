@@ -234,7 +234,8 @@ model Aula {
   luogo           Luogo?   @relation(fields: [luogoId], references: [id], onDelete: SetNull)
   stato           StatoAula @default(PIANIFICATA)
   dataInizio      DateTime? // "data aula" — determina anche il mese di fatturazione
-  dataFine        DateTime?
+  dataFine        DateTime? // per FAD_ASINCRONA: scadenza entro cui completare il corso
+  googleCalendarEventId String? // per FAD_ASINCRONA: id evento promemoria scadenza su Google Calendar
   costoAffitto    Decimal  @db.Decimal(10, 2) @default(0)
   creatoDay       String   // user ID
   createdAt       DateTime @default(now())

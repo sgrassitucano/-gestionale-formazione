@@ -64,6 +64,55 @@ export async function POST(
     let failedCount = 0;
     const errors: string[] = [];
 
+    if (aula.modalita === "FAD_ASINCRONA") {
+      if (!aula.dataFine) {
+        return NextResponse.json({ error: "Imposta prima una scadenza" }, { status: 400 });
+      }
+
+      try {
+        const eventInput = {
+          summary: `Scadenza: ${aula.corso.titolo}`,
+          description: `Corso e-learning da completare entro questa data: ${aula.corso.titolo}`,
+          location: "",
+          startDateTime: combineDateTime(aula.dataFine, "09:00"),
+          endDateTime: combineDateTime(aula.dataFine, "09:30"),
+        };
+
+        if (aula.googleCalendarEventId) {
+          await updateCalendarEvent(
+            config.clientId,
+            config.clientSecret,
+            config.redirectUri,
+            accessToken,
+            gcalConfig.calendarId,
+            aula.googleCalendarEventId,
+            eventInput
+          );
+        } else {
+          const eventId = await createCalendarEvent(
+            config.clientId,
+            config.clientSecret,
+            config.redirectUri,
+            accessToken,
+            gcalConfig.calendarId,
+            eventInput
+          );
+
+          await db.aula.update({
+            where: { id: aula.id },
+            data: { googleCalendarEventId: eventId },
+          });
+        }
+
+        syncedCount = 1;
+      } catch (err: any) {
+        failedCount = 1;
+        errors.push(`Scadenza aula: ${err.message}`);
+      }
+
+      return NextResponse.json({ success: true, syncedCount, failedCount, errors });
+    }
+
     for (const lezione of aula.lezioni) {
       try {
         const startDateTime = combineDateTime(lezione.data, lezione.oraInizio);

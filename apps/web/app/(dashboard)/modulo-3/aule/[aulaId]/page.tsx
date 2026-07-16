@@ -32,7 +32,7 @@ const STATO_VARIANT: Record<string, "warning" | "default" | "success"> = {
   CONCLUSA: "success",
 };
 
-const TABS: Array<{ key: Tab; label: string; icon: any }> = [
+const ALL_TABS: Array<{ key: Tab; label: string; icon: any }> = [
   { key: "calendario", label: "Calendario", icon: CalendarDays },
   { key: "discenti", label: "Discenti", icon: Users },
   { key: "docenti", label: "Docenti", icon: UserCog },
@@ -46,7 +46,7 @@ export default function AulaDetailPage() {
   const aulaId = params.aulaId as string;
 
   const [aula, setAula] = useState<any>(null);
-  const [tab, setTab] = useState<Tab>("calendario");
+  const [tab, setTab] = useState<Tab | null>(null);
   const [loading, setLoading] = useState(true);
   const [gcalMessage, setGcalMessage] = useState("");
 
@@ -76,6 +76,10 @@ export default function AulaDetailPage() {
   };
 
   if (loading || !aula) return <div className="text-muted-foreground">Loading...</div>;
+
+  const isAsincrona = aula.modalita === "FAD_ASINCRONA";
+  const TABS = ALL_TABS.filter((t) => !(t.key === "docenti" && isAsincrona));
+  const activeTab = tab ?? TABS[0].key;
 
   return (
     <div className="max-w-6xl">
@@ -112,22 +116,74 @@ export default function AulaDetailPage() {
 
       <div className="flex gap-1 mb-6 bg-secondary/60 p-1 rounded-lg w-fit flex-wrap">
         {TABS.map(({ key, label, icon: Icon }) => (
-          <Button key={key} size="sm" variant={tab === key ? "default" : "ghost"} onClick={() => setTab(key)}>
+          <Button key={key} size="sm" variant={activeTab === key ? "default" : "ghost"} onClick={() => setTab(key)}>
             <Icon className="h-3.5 w-3.5" /> {label}
           </Button>
         ))}
       </div>
 
-      {tab === "calendario" && <CalendarioTab aula={aula} onUpdate={loadAula} />}
-      {tab === "discenti" && <DiscentiTab aula={aula} />}
-      {tab === "docenti" && <DocentiTab aula={aula} onUpdate={loadAula} />}
-      {tab === "modulistica" && <ModulisticaTab aula={aula} />}
-      {tab === "gcal" && <GCalTab aula={aula} />}
+      {activeTab === "calendario" && <CalendarioTab aula={aula} onUpdate={loadAula} />}
+      {activeTab === "discenti" && <DiscentiTab aula={aula} />}
+      {activeTab === "docenti" && <DocentiTab aula={aula} onUpdate={loadAula} />}
+      {activeTab === "modulistica" && <ModulisticaTab aula={aula} />}
+      {activeTab === "gcal" && <GCalTab aula={aula} />}
     </div>
   );
 }
 
 function CalendarioTab({ aula, onUpdate }: any) {
+  if (aula.modalita === "FAD_ASINCRONA") {
+    return <ScadenzaPanel aula={aula} onUpdate={onUpdate} />;
+  }
+  return <LezioniPanel aula={aula} onUpdate={onUpdate} />;
+}
+
+function ScadenzaPanel({ aula, onUpdate }: any) {
+  const [dataFine, setDataFine] = useState(aula.dataFine ? aula.dataFine.slice(0, 10) : "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await axios.put(`/api/aule/${aula.id}`, { dataFine: dataFine || null });
+      onUpdate();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const giorni = aula.dataFine
+    ? Math.ceil((new Date(aula.dataFine).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <p className="text-sm text-muted-foreground mb-4">
+          Corso e-learning: nessuna lezione da pianificare, imposta la scadenza entro cui il discente deve completarlo.
+        </p>
+        <form onSubmit={handleSave} className="flex gap-4 items-end">
+          <div className="space-y-1.5">
+            <Label>Scadenza</Label>
+            <Input type="date" value={dataFine} onChange={(e) => setDataFine(e.target.value)} />
+          </div>
+          <Button type="submit" variant="success" disabled={saving}>
+            {saving ? "Salvataggio..." : "Salva Scadenza"}
+          </Button>
+        </form>
+
+        {giorni !== null && (
+          <div className={`mt-4 p-3 rounded-md text-sm ${giorni < 0 ? "bg-destructive/10 text-destructive" : giorni <= 7 ? "bg-warning/10 text-warning" : "bg-secondary/50 text-muted-foreground"}`}>
+            {giorni < 0 ? `Scaduta da ${Math.abs(giorni)} giorni` : giorni === 0 ? "Scade oggi" : `Scade tra ${giorni} giorni`}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LezioniPanel({ aula, onUpdate }: any) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ data: "", oraInizio: "09:00", oraFine: "13:00" });
   const [error, setError] = useState("");
@@ -410,12 +466,16 @@ function GCalTab({ aula }: any) {
     }
   };
 
+  const isAsincrona = aula.modalita === "FAD_ASINCRONA";
+
   return (
     <Card>
       <CardContent className="p-6">
         <p className="mb-4 text-sm text-muted-foreground">
-          Sincronizza le lezioni di questa aula con Google Calendar. Richiede connessione OAuth
-          (configurabile in Impostazioni → Google Calendar OAuth).
+          {isAsincrona
+            ? "Sincronizza la scadenza di questa aula come promemoria su Google Calendar."
+            : "Sincronizza le lezioni di questa aula con Google Calendar."}{" "}
+          Richiede connessione OAuth (configurabile in Impostazioni → Google Calendar OAuth).
         </p>
 
         <div className="flex gap-3">
@@ -423,7 +483,7 @@ function GCalTab({ aula }: any) {
             <Link2 className="h-4 w-4" /> Connetti Google Calendar
           </Button>
           <Button variant="success" onClick={handleSync} disabled={syncing}>
-            {syncing ? "Sincronizzando..." : "Sincronizza Lezioni"}
+            {syncing ? "Sincronizzando..." : isAsincrona ? "Sincronizza Scadenza" : "Sincronizza Lezioni"}
           </Button>
         </div>
 
