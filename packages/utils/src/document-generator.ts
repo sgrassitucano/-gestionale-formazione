@@ -65,6 +65,52 @@ export async function generatePdfFromData(
 }
 
 /**
+ * Fills an XLSX template: writes one row per item in `rows`, starting at `startRow`,
+ * mapping each `columnFields` entry (column letter + dot-path) to a cell.
+ * Header rows above `startRow` are left untouched.
+ */
+export async function fillXlsxTemplate(
+  templateBuffer: Buffer,
+  columnFields: Array<{ column: string; sorgenteDato: string }>,
+  rowContexts: Array<Record<string, any>>,
+  startRow: number = 2
+): Promise<Buffer> {
+  const XLSX = await import("xlsx");
+  const workbook = XLSX.read(templateBuffer, { type: "buffer" });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+
+  const range = XLSX.utils.decode_range(sheet["!ref"] || "A1:A1");
+
+  rowContexts.forEach((context, idx) => {
+    const rowNum = startRow + idx;
+    for (const { column, sorgenteDato } of columnFields) {
+      const parts = sorgenteDato.split(".");
+      let value: any = context;
+      for (const part of parts) {
+        value = value?.[part];
+      }
+      if (value instanceof Date) {
+        value = value.toLocaleDateString("it-IT");
+      }
+      if (value == null) continue;
+
+      const cellRef = `${column}${rowNum}`;
+      sheet[cellRef] = { t: "s", v: String(value) };
+
+      const cellAddr = XLSX.utils.decode_cell(cellRef);
+      range.e.r = Math.max(range.e.r, cellAddr.r);
+      range.e.c = Math.max(range.e.c, cellAddr.c);
+    }
+  });
+
+  sheet["!ref"] = XLSX.utils.encode_range(range);
+
+  const outBuffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  return outBuffer;
+}
+
+/**
  * Resolves dot-notation data paths (e.g. "discente.nome") against a context object
  * into a flat map suitable for template rendering.
  */

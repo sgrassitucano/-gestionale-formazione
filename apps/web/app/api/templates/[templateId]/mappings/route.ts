@@ -4,7 +4,7 @@ import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
 const createMappingSchema = z.object({
-  corsoCodec: z.string(),
+  corsoCodec: z.string().nullable().optional(),
   modalita: z.enum(["PRESENZA", "FAD_SINCRONA", "FAD_ASINCRONA"]).nullable().optional(),
 });
 
@@ -39,7 +39,7 @@ export async function POST(
     const mapping = await db.templateMapping.create({
       data: {
         templateId: params.templateId,
-        corsoCodec,
+        corsoCodec: corsoCodec || null,
         modalita: modalita || null,
       },
     });

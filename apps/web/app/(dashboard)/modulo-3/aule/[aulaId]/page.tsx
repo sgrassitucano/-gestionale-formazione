@@ -368,7 +368,11 @@ function ModulisticaTab({ aula }: any) {
   useEffect(() => {
     axios.get("/api/templates").then((res) => {
       const mapped = (res.data.templates || []).filter((t: any) =>
-        t.mappings?.some((m: any) => m.corsoCodec === aula.corsoCodec && (m.modalita === null || m.modalita === aula.modalita))
+        t.mappings?.some(
+          (m: any) =>
+            (m.corsoCodec === aula.corsoCodec || m.corsoCodec === null) &&
+            (m.modalita === null || m.modalita === aula.modalita)
+        )
       );
       setTemplates(mapped);
     });

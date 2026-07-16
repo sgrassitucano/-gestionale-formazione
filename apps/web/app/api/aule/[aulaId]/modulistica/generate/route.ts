@@ -5,6 +5,7 @@ import { downloadFile, BUCKETS } from "@/lib/storage";
 import {
   generateDocxFromTemplate,
   generateHtmlFromTemplate,
+  fillXlsxTemplate,
   resolveFieldMappings,
 } from "@gestionale/utils/document-generator";
 
@@ -75,7 +76,26 @@ export async function POST(
 
     const templatePath = new URL(template.fileUrl).pathname.split("/").pop()!;
     const templateBuffer = await downloadFile(BUCKETS.TEMPLATES, templatePath);
-    const isDocx = template.mimeType.includes("wordprocessingml");
+    const isDocx = template.mimeType.includes("wordprocessingml.document");
+    const isXlsx = template.mimeType.includes("spreadsheetml");
+
+    // PER_AULA_LISTA + XLSX: compila un foglio con una riga per discente (es. export EBAFOS/piattaforma)
+    if (isXlsx && template.tipoGenerazione === "PER_AULA_LISTA") {
+      if (aula.iscrizioni.length === 0) {
+        return NextResponse.json({ error: "Nessun discente iscritto" }, { status: 400 });
+      }
+
+      const columnFields = template.campi.map((c) => ({ column: c.placeholder, sorgenteDato: c.sorgenteDato }));
+      const rowContexts = aula.iscrizioni.map((i) => ({ ...baseContext, discente: i.discente }));
+      const outputBuffer = await fillXlsxTemplate(templateBuffer, columnFields, rowContexts);
+
+      return new NextResponse(new Uint8Array(outputBuffer), {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="${template.nome}_${aula.id}.xlsx"`,
+        },
+      });
+    }
 
     // PER_DISCENTE: un documento per ogni discente iscritto, zippati insieme
     if (template.tipoGenerazione === "PER_DISCENTE") {

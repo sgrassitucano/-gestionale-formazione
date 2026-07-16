@@ -21,6 +21,7 @@ export default function NuovaAulaPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [corsi, setCorsi] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [docenti, setDocenti] = useState<any[]>([]);
   const [luoghi, setLuoghi] = useState<any[]>([]);
   const [nuovoLuogo, setNuovoLuogo] = useState("");
@@ -43,6 +44,7 @@ export default function NuovaAulaPage() {
 
   useEffect(() => {
     axios.get("/api/corsi").then((res) => setCorsi(res.data.corsi || []));
+    axios.get("/api/templates").then((res) => setTemplates(res.data.templates || []));
     axios.get("/api/docenti").then((res) => setDocenti(res.data.docenti || []));
     loadLuoghi();
   }, []);
@@ -79,10 +81,18 @@ export default function NuovaAulaPage() {
   };
 
   const corsoSelezionato = corsi.find((c) => c.codice === corsoCodec);
+  const hasMappedTemplate = (codiceCorso: string, mod: string) =>
+    templates.some((t: any) =>
+      t.mappings?.some(
+        (m: any) =>
+          (m.corsoCodec === codiceCorso || m.corsoCodec === null) &&
+          (m.modalita === null || m.modalita === mod)
+      )
+    );
   const corsiFiltrati = corsi.filter(
     (c) =>
       (!c.modalitaConsentite?.length || c.modalitaConsentite.includes(modalita)) &&
-      c.templates?.some((t: any) => t.modalita === null || t.modalita === modalita)
+      hasMappedTemplate(c.codice, modalita)
   );
 
   useEffect(() => {

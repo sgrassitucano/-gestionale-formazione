@@ -113,9 +113,19 @@ export function validateDiscentiRows(
       nome: row.nome.trim(),
       dataNascita: dataNascita || undefined,
       luogoNascita: row.luogonascita || undefined,
+      provinciaNascita: row.provincianascita || undefined,
+      regioneNascita: row.regionenascita || undefined,
       codiceFiscale: cf,
       email: row.email?.trim() || undefined,
       cellulare: row.cellulare?.trim() || undefined,
+      sesso: row.sesso || undefined,
+      indirizzoResidenza: row.indirizzoresidenza || undefined,
+      capResidenza: row.capresidenza || undefined,
+      cittaResidenza: row.cittaresidenza || undefined,
+      provinciaResidenza: row.provinciaresidenza || undefined,
+      regioneResidenza: row.regioneresidenza || undefined,
+      mansione: row.mansione || undefined,
+      codiceAteco: row.codiceateco || undefined,
       aziendaId: "", // Will be looked up or created
     });
   });

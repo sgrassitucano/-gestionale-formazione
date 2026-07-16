@@ -109,10 +109,20 @@ model Discente {
   cognome         String   // ENCRYPTED
   nome            String   // ENCRYPTED
   dataNascita     DateTime? // ENCRYPTED
-  luogoNascita    String?
+  luogoNascita    String? // città di nascita
+  provinciaNascita String?
+  regioneNascita  String?
   codiceFiscale   String   // ENCRYPTED, UNIQUE
   email           String?  // ENCRYPTED
   cellulare       String?  // ENCRYPTED
+  sesso           String? // M/F
+  indirizzoResidenza String?
+  capResidenza    String?
+  cittaResidenza  String?
+  provinciaResidenza String?
+  regioneResidenza String?
+  mansione        String?
+  codiceAteco     String?
   aziendaId       String
   azienda         Azienda  @relation(fields: [aziendaId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
@@ -399,8 +409,8 @@ model TemplateMapping {
   id              String   @id @default(cuid())
   templateId      String
   template        Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  corsoCodec      String
-  corso           CatalogoCorso @relation(fields: [corsoCodec], references: [codice], onDelete: Cascade)
+  corsoCodec      String? // null = vale per tutti i corsi
+  corso           CatalogoCorso? @relation(fields: [corsoCodec], references: [codice], onDelete: Cascade)
   modalita        ModalitaErogazione? // null = vale per tutte le modalità del corso
   createdAt       DateTime @default(now())
 

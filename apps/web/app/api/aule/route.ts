@@ -100,16 +100,11 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        const { id: _discenteId, ...discenteData } = discente;
         const savedDiscente = await tx.discente.upsert({
           where: { codiceFiscale: discente.codiceFiscale },
-          create: { ...discente, aziendaId: azienda.id },
-          update: {
-            nome: discente.nome,
-            cognome: discente.cognome,
-            dataNascita: discente.dataNascita,
-            email: discente.email,
-            cellulare: discente.cellulare,
-          },
+          create: { ...discenteData, aziendaId: azienda.id },
+          update: discenteData,
         });
 
         await tx.iscrizioneAula.create({
