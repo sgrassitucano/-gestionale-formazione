@@ -12,7 +12,6 @@ const REQUIRED_COLUMNS = [
   "email",
   "cellulare",
   "dataNascita",
-  "cantiere",
   "azienda",
 ];
 
