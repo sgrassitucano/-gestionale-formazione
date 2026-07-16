@@ -421,3 +421,28 @@ model ArchivioAula {
 // Tutti live-computed da Aula/IscrizioneAula/DocenteLezione/ListinoPrezzi,
 // filtrati per mese via Aula.dataInizio. Nessuno snapshot persistito.
 // ============================================================================
+
+enum TipoVoce {
+  ENTRATA
+  USCITA
+}
+
+model VoceContabile {
+  id              String    @id @default(cuid())
+  descrizione     String
+  categoria       String    // es. "Piattaforma", "EBAFOS", "Altro" — libero
+  tipo            TipoVoce
+  importo         Decimal   @db.Decimal(10, 2)
+  dataInizio      DateTime  // mese/anno da cui la voce è attiva
+  dataFine        DateTime? // null = ancora attiva (se ricorrente) o coincide con dataInizio (se una tantum)
+  ricorrente      Boolean   @default(false) // true = si somma ogni mese tra dataInizio e dataFine (o oggi)
+  creatoDay       String    // user ID
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // soft-delete
+
+  @@index([tipo])
+  @@index([categoria])
+  @@index([dataInizio])
+  @@index([deletedAt])
+}

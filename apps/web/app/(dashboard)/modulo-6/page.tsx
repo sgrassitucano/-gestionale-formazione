@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { BilancioGeneraleTab } from "@/components/report/BilancioGeneraleTab";
 
 const COLORS = [
   "hsl(199 89% 30%)",
@@ -35,7 +36,7 @@ const COLORS = [
 ];
 
 export default function Modulo6Page() {
-  const [tab, setTab] = useState<"bilancio" | "kpi">("bilancio");
+  const [tab, setTab] = useState<"bilancio" | "kpi" | "bilancio-generale">("bilancio");
 
   return (
     <div className="max-w-6xl">
@@ -45,9 +46,12 @@ export default function Modulo6Page() {
       <div className="flex gap-1 mb-6 bg-secondary/60 p-1 rounded-lg w-fit">
         <Button variant={tab === "bilancio" ? "default" : "ghost"} size="sm" onClick={() => setTab("bilancio")}>Bilancio Aule</Button>
         <Button variant={tab === "kpi" ? "default" : "ghost"} size="sm" onClick={() => setTab("kpi")}>KPI Dashboard</Button>
+        <Button variant={tab === "bilancio-generale" ? "default" : "ghost"} size="sm" onClick={() => setTab("bilancio-generale")}>Bilancio Generale</Button>
       </div>
 
-      {tab === "bilancio" ? <BilancioTab /> : <KpiTab />}
+      {tab === "bilancio" && <BilancioTab />}
+      {tab === "kpi" && <KpiTab />}
+      {tab === "bilancio-generale" && <BilancioGeneraleTab />}
     </div>
   );
 }
