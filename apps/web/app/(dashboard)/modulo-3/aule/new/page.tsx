@@ -62,7 +62,10 @@ export default function NuovaAulaPage() {
   };
 
   const addDocente = () => {
-    setDocentiAssegnati([...docentiAssegnati, { docenteId: "", oreEffettiveDocenza: 0, trasferAcosto: 0 }]);
+    setDocentiAssegnati([
+      ...docentiAssegnati,
+      { docenteId: "", oreEffettiveDocenza: corsoSelezionato?.oreAula ?? 0, trasferAcosto: 0 },
+    ]);
   };
 
   const updateDocente = (idx: number, field: string, value: any) => {
@@ -85,6 +88,14 @@ export default function NuovaAulaPage() {
       setCorsoCodec("");
     }
   }, [modalita]);
+
+  const luogoSelezionato = luoghi.find((l) => l.id === luogoId);
+
+  useEffect(() => {
+    if (!luogoSelezionato || !corsoSelezionato) return;
+    const tariffa = corsoSelezionato.oreAula <= 4 ? luogoSelezionato.costoMezzaGiornata : luogoSelezionato.costoGiornataIntera;
+    if (tariffa != null) setCostoAffitto(Number(tariffa));
+  }, [luogoId, corsoCodec]);
 
   const canProceedStep1 = corsoCodec && modalita;
   const canProceedStep2 = !!file;
@@ -235,6 +246,9 @@ export default function NuovaAulaPage() {
                 <div className="space-y-1.5">
                   <Label>Costo Affitto Locali (€)</Label>
                   <Input type="number" step="0.01" value={costoAffitto} onChange={(e) => setCostoAffitto(parseFloat(e.target.value) || 0)} />
+                  {luogoSelezionato && (luogoSelezionato.costoMezzaGiornata != null || luogoSelezionato.costoGiornataIntera != null) && (
+                    <p className="text-xs text-muted-foreground">Precompilato da tariffario sede, modificabile.</p>
+                  )}
                 </div>
               </div>
 

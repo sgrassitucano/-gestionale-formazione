@@ -6,6 +6,9 @@ import { z } from "zod";
 const updateLuogoSchema = z.object({
   nome: z.string().min(1).optional(),
   indirizzo: z.string().optional(),
+  citta: z.string().optional(),
+  costoMezzaGiornata: z.number().min(0).optional().nullable(),
+  costoGiornataIntera: z.number().min(0).optional().nullable(),
 });
 
 export async function PUT(

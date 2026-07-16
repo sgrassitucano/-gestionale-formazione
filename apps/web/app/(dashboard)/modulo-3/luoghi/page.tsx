@@ -10,13 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
+const EMPTY_FORM = { nome: "", indirizzo: "", citta: "", costoMezzaGiornata: "", costoGiornataIntera: "" };
+
 export default function LuoghiPage() {
   const [luoghi, setLuoghi] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: "", indirizzo: "" });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ nome: "", indirizzo: "" });
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
     load();
@@ -31,21 +33,35 @@ export default function LuoghiPage() {
     }
   };
 
+  const toPayload = (f: typeof EMPTY_FORM) => ({
+    nome: f.nome,
+    indirizzo: f.indirizzo || undefined,
+    citta: f.citta || undefined,
+    costoMezzaGiornata: f.costoMezzaGiornata ? parseFloat(f.costoMezzaGiornata) : null,
+    costoGiornataIntera: f.costoGiornataIntera ? parseFloat(f.costoGiornataIntera) : null,
+  });
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await axios.post("/api/luoghi", form);
-    setForm({ nome: "", indirizzo: "" });
+    await axios.post("/api/luoghi", toPayload(form));
+    setForm(EMPTY_FORM);
     setShowForm(false);
     load();
   };
 
   const startEdit = (l: any) => {
     setEditingId(l.id);
-    setEditForm({ nome: l.nome, indirizzo: l.indirizzo || "" });
+    setEditForm({
+      nome: l.nome,
+      indirizzo: l.indirizzo || "",
+      citta: l.citta || "",
+      costoMezzaGiornata: l.costoMezzaGiornata != null ? String(l.costoMezzaGiornata) : "",
+      costoGiornataIntera: l.costoGiornataIntera != null ? String(l.costoGiornataIntera) : "",
+    });
   };
 
   const saveEdit = async (id: string) => {
-    await axios.put(`/api/luoghi/${id}`, editForm);
+    await axios.put(`/api/luoghi/${id}`, toPayload(editForm));
     setEditingId(null);
     load();
   };
@@ -59,7 +75,7 @@ export default function LuoghiPage() {
   if (loading) return <div className="text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-bold text-foreground mb-1">Aule</h1>
       <p className="text-sm text-muted-foreground mb-4">Anagrafica corsi, docenti e gestione aule</p>
       <AuleSubNav />
@@ -81,8 +97,20 @@ export default function LuoghiPage() {
                 <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
               </div>
               <div className="space-y-1.5">
+                <Label>Città</Label>
+                <Input value={form.citta} onChange={(e) => setForm({ ...form, citta: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
                 <Label>Indirizzo</Label>
                 <Input value={form.indirizzo} onChange={(e) => setForm({ ...form, indirizzo: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Costo Mezza Giornata (€) — corso ≤ 4h</Label>
+                <Input type="number" step="0.01" value={form.costoMezzaGiornata} onChange={(e) => setForm({ ...form, costoMezzaGiornata: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Costo Giornata Intera (€) — corso &gt; 4h</Label>
+                <Input type="number" step="0.01" value={form.costoGiornataIntera} onChange={(e) => setForm({ ...form, costoGiornataIntera: e.target.value })} />
               </div>
               <Button type="submit" variant="success" className="col-span-2">Crea Luogo</Button>
             </form>
@@ -94,7 +122,9 @@ export default function LuoghiPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
-            <TableHead>Indirizzo</TableHead>
+            <TableHead>Città</TableHead>
+            <TableHead>1/2 Giornata</TableHead>
+            <TableHead>Giornata Intera</TableHead>
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
@@ -107,7 +137,13 @@ export default function LuoghiPage() {
                     <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} className="h-8" autoFocus />
                   </TableCell>
                   <TableCell>
-                    <Input value={editForm.indirizzo} onChange={(e) => setEditForm({ ...editForm, indirizzo: e.target.value })} className="h-8" />
+                    <Input value={editForm.citta} onChange={(e) => setEditForm({ ...editForm, citta: e.target.value })} className="h-8" />
+                  </TableCell>
+                  <TableCell>
+                    <Input type="number" step="0.01" value={editForm.costoMezzaGiornata} onChange={(e) => setEditForm({ ...editForm, costoMezzaGiornata: e.target.value })} className="h-8 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Input type="number" step="0.01" value={editForm.costoGiornataIntera} onChange={(e) => setEditForm({ ...editForm, costoGiornataIntera: e.target.value })} className="h-8 w-24" />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -123,7 +159,9 @@ export default function LuoghiPage() {
               ) : (
                 <>
                   <TableCell className="font-medium">{l.nome}</TableCell>
-                  <TableCell>{l.indirizzo || "-"}</TableCell>
+                  <TableCell>{l.citta || "-"}</TableCell>
+                  <TableCell>{l.costoMezzaGiornata != null ? `€ ${Number(l.costoMezzaGiornata).toFixed(2)}` : "-"}</TableCell>
+                  <TableCell>{l.costoGiornataIntera != null ? `€ ${Number(l.costoGiornataIntera).toFixed(2)}` : "-"}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>

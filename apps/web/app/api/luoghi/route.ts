@@ -6,6 +6,9 @@ import { z } from "zod";
 const createLuogoSchema = z.object({
   nome: z.string().min(1),
   indirizzo: z.string().optional(),
+  citta: z.string().optional(),
+  costoMezzaGiornata: z.number().min(0).optional().nullable(),
+  costoGiornataIntera: z.number().min(0).optional().nullable(),
 });
 
 export async function GET(request: NextRequest) {
