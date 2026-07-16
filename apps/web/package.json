@@ -30,6 +30,7 @@
     "axios": "^1.5.0",
     "react-big-calendar": "^1.13.4",
     "@types/react-big-calendar": "^1.8.9",
+    "jszip": "^3.10.1",
     "@gestionale/db": "*",
     "@gestionale/types": "*",
     "@gestionale/utils": "*"
