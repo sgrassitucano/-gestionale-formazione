@@ -80,7 +80,9 @@ export default function NuovaAulaPage() {
 
   const corsoSelezionato = corsi.find((c) => c.codice === corsoCodec);
   const corsiFiltrati = corsi.filter(
-    (c) => !c.modalitaConsentite?.length || c.modalitaConsentite.includes(modalita)
+    (c) =>
+      (!c.modalitaConsentite?.length || c.modalitaConsentite.includes(modalita)) &&
+      c.templates?.some((t: any) => t.modalita === null || t.modalita === modalita)
   );
 
   useEffect(() => {
@@ -181,7 +183,9 @@ export default function NuovaAulaPage() {
                   {corsiFiltrati.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
                 </select>
                 {corsiFiltrati.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Nessun corso disponibile per questa modalità.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Nessun corso disponibile per questa modalità (serve almeno un template mappato in Modulistica).
+                  </p>
                 )}
               </div>
             </div>

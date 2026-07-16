@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
 
     const corsi = await db.catalogoCorso.findMany({
       where: { deletedAt: null },
+      include: { templates: { select: { modalita: true } } },
       orderBy: { codice: "asc" },
     });
 
