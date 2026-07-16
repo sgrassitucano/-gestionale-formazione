@@ -76,16 +76,15 @@ export default function NuovaAulaPage() {
   };
 
   const corsoSelezionato = corsi.find((c) => c.codice === corsoCodec);
-  const modalitaAmmesse: string[] =
-    corsoSelezionato?.modalitaConsentite?.length > 0
-      ? corsoSelezionato.modalitaConsentite
-      : MODALITA_OPTIONS.map((m) => m.value);
+  const corsiFiltrati = corsi.filter(
+    (c) => !c.modalitaConsentite?.length || c.modalitaConsentite.includes(modalita)
+  );
 
   useEffect(() => {
-    if (corsoSelezionato && !modalitaAmmesse.includes(modalita)) {
-      setModalita(modalitaAmmesse[0] || "");
+    if (corsoSelezionato && !corsiFiltrati.some((c) => c.codice === corsoCodec)) {
+      setCorsoCodec("");
     }
-  }, [corsoCodec]);
+  }, [modalita]);
 
   const canProceedStep1 = corsoCodec && modalita;
   const canProceedStep2 = !!file;
@@ -146,38 +145,32 @@ export default function NuovaAulaPage() {
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
+                <Label>Modalità</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {MODALITA_OPTIONS.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setModalita(m.value)}
+                      className={`p-3 rounded-md border text-sm font-medium transition-colors ${
+                        modalita === m.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:bg-secondary"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
                 <Label>Corso</Label>
                 <select value={corsoCodec} onChange={(e) => setCorsoCodec(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm">
                   <option value="">Seleziona corso</option>
-                  {corsi.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
+                  {corsiFiltrati.map((c) => <option key={c.codice} value={c.codice}>{c.titolo}</option>)}
                 </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Modalità</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {MODALITA_OPTIONS.map((m) => {
-                    const ammessa = modalitaAmmesse.includes(m.value);
-                    return (
-                      <button
-                        key={m.value}
-                        type="button"
-                        disabled={!ammessa}
-                        onClick={() => setModalita(m.value)}
-                        className={`p-3 rounded-md border text-sm font-medium transition-colors ${
-                          !ammessa
-                            ? "border-border opacity-40 cursor-not-allowed"
-                            : modalita === m.value
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border hover:bg-secondary"
-                        }`}
-                      >
-                        {m.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {corsoSelezionato && modalitaAmmesse.length < MODALITA_OPTIONS.length && (
-                  <p className="text-xs text-muted-foreground">Modalità non ammesse per questo corso disabilitate.</p>
+                {corsiFiltrati.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nessun corso disponibile per questa modalità.</p>
                 )}
               </div>
             </div>
