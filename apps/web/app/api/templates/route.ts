@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const nome = formData.get("nome") as string;
+    const tipoGenerazione = (formData.get("tipoGenerazione") as string) || "PER_AULA_SEMPLICE";
 
     if (!file || !nome) {
       return NextResponse.json({ error: "File and nome required" }, { status: 400 });
@@ -42,27 +43,30 @@ export async function POST(request: NextRequest) {
         nome,
         fileUrl,
         mimeType: file.type,
+        tipoGenerazione: tipoGenerazione as any,
         creatoDay: user.id,
       },
     });
 
-    // Auto-extract fields
+    // Auto-extract fields (non per i template statici, non generati)
     let extractedFields: any[] = [];
-    try {
-      extractedFields = await extractFieldsFromTemplate(buffer, file.type);
+    if (tipoGenerazione !== "STATICO") {
+      try {
+        extractedFields = await extractFieldsFromTemplate(buffer, file.type);
 
-      for (const field of extractedFields) {
-        await db.templateField.create({
-          data: {
-            templateId: template.id,
-            nomeCampo: field.nomeCampo,
-            placeholder: field.placeholder,
-            sorgenteDato: COMMON_FIELD_MAPPINGS[field.nomeCampo] || "",
-          },
-        });
+        for (const field of extractedFields) {
+          await db.templateField.create({
+            data: {
+              templateId: template.id,
+              nomeCampo: field.nomeCampo,
+              placeholder: field.placeholder,
+              sorgenteDato: COMMON_FIELD_MAPPINGS[field.nomeCampo] || "",
+            },
+          });
+        }
+      } catch (extractError) {
+        console.error("Field extraction error:", extractError);
       }
-    } catch (extractError) {
-      console.error("Field extraction error:", extractError);
     }
 
     return NextResponse.json({

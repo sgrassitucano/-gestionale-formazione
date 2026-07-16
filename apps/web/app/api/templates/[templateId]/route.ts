@@ -4,7 +4,8 @@ import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
 const updateTemplateSchema = z.object({
-  nome: z.string().min(1),
+  nome: z.string().min(1).optional(),
+  tipoGenerazione: z.enum(["PER_DISCENTE", "PER_AULA_LISTA", "PER_AULA_SEMPLICE", "STATICO"]).optional(),
 });
 
 export async function GET(
@@ -37,11 +38,11 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { nome } = updateTemplateSchema.parse(body);
+    const data = updateTemplateSchema.parse(body);
 
     const template = await db.template.update({
       where: { id: params.templateId },
-      data: { nome },
+      data,
     });
 
     return NextResponse.json({ success: true, template });

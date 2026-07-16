@@ -355,11 +355,19 @@ model SystemSettings {
 // MODULO 4: MODULISTICA
 // ============================================================================
 
+enum TipoGenerazioneTemplate {
+  PER_DISCENTE    // un documento per ogni discente iscritto (es. test individuale)
+  PER_AULA_LISTA  // un documento per aula, con tabella discenti ripetuta (es. registro presenze)
+  PER_AULA_SEMPLICE // un documento per aula, nessun dato discente-specifico
+  STATICO         // documento di riferimento, scaricabile così com'è, non generato
+}
+
 model Template {
   id              String   @id @default(cuid())
   nome            String
   fileUrl         String   // Supabase Storage URL (privato)
   mimeType        String   // application/pdf, application/msword
+  tipoGenerazione TipoGenerazioneTemplate @default(PER_AULA_SEMPLICE)
   creatoDay       String   // user ID
   creatoUtente    ProfiloUtente @relation("createdBy", fields: [creatoDay], references: [id], onDelete: Restrict)
   createdAt       DateTime @default(now())

@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
+const TIPO_GENERAZIONE_OPTIONS = [
+  { value: "PER_AULA_SEMPLICE", label: "Per Aula (semplice)" },
+  { value: "PER_AULA_LISTA", label: "Per Aula (con tabella discenti)" },
+  { value: "PER_DISCENTE", label: "Per Discente (uno a testa)" },
+  { value: "STATICO", label: "Statico (scarica così com'è)" },
+];
+
 const SORGENTI_DATI = [
   { value: "discente.nome", label: "Discente: Nome" },
   { value: "discente.cognome", label: "Discente: Cognome" },
@@ -31,6 +38,7 @@ export default function Modulo4Page() {
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [nome, setNome] = useState("");
+  const [tipoGenerazione, setTipoGenerazione] = useState("PER_AULA_SEMPLICE");
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [extractedFields, setExtractedFields] = useState<any[]>([]);
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
@@ -60,6 +68,7 @@ export default function Modulo4Page() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("nome", nome);
+      formData.append("tipoGenerazione", tipoGenerazione);
 
       const res = await axios.post("/api/templates", formData);
       setExtractedFields(res.data.extractedFields || []);
@@ -67,6 +76,7 @@ export default function Modulo4Page() {
       setFieldMappings({});
       setFile(null);
       setNome("");
+      setTipoGenerazione("PER_AULA_SEMPLICE");
       loadTemplates();
     } catch (error: any) {
       alert(error.response?.data?.error || "Upload failed");
@@ -92,6 +102,11 @@ export default function Modulo4Page() {
     } finally {
       setSavingMappings(false);
     }
+  };
+
+  const handleChangeTipo = async (templateId: string, tipo: string) => {
+    await axios.put(`/api/templates/${templateId}`, { tipoGenerazione: tipo });
+    loadTemplates();
   };
 
   const startRename = (t: any) => {
@@ -177,7 +192,13 @@ export default function Modulo4Page() {
             </div>
             <div className="space-y-1.5">
               <Label>File</Label>
-              <Input type="file" accept=".pdf,.docx,.doc,.html" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <Input type="file" accept=".pdf,.docx,.doc,.html,.xlsx" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo Generazione</Label>
+              <select value={tipoGenerazione} onChange={(e) => setTipoGenerazione(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm">
+                {TIPO_GENERAZIONE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
             <Button onClick={handleUpload} disabled={!file || !nome || uploading} className="w-full">
               <Upload className="h-4 w-4" />
@@ -233,7 +254,8 @@ export default function Modulo4Page() {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
-            <TableHead>Tipo</TableHead>
+            <TableHead>Formato</TableHead>
+            <TableHead>Generazione</TableHead>
             <TableHead>Campi</TableHead>
             <TableHead>Corsi Mappati</TableHead>
             <TableHead></TableHead>
@@ -263,6 +285,15 @@ export default function Modulo4Page() {
                 )}
               </TableCell>
               <TableCell><Badge variant="secondary">{t.mimeType.split("/").pop()}</Badge></TableCell>
+              <TableCell>
+                <select
+                  value={t.tipoGenerazione}
+                  onChange={(e) => handleChangeTipo(t.id, e.target.value)}
+                  className="h-8 rounded-md border border-input bg-card px-2 text-xs"
+                >
+                  {TIPO_GENERAZIONE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </TableCell>
               <TableCell>{t.campi?.length || 0} campi</TableCell>
               <TableCell>{t.mappings?.length || 0} corsi</TableCell>
               <TableCell>
