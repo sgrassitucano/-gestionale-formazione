@@ -85,14 +85,24 @@ export async function fillXlsxTemplate(
   rowContexts.forEach((context, idx) => {
     const rowNum = startRow + idx;
     for (const { column, sorgenteDato } of columnFields) {
-      const parts = sorgenteDato.split(".");
-      let value: any = context;
-      for (const part of parts) {
-        value = value?.[part];
+      let value: any;
+
+      if (sorgenteDato.startsWith("literal:")) {
+        value = sorgenteDato.slice("literal:".length);
+      } else if (sorgenteDato === "computed.usernamePiattaforma") {
+        const cf = (context as any).discente?.codiceFiscale as string | undefined;
+        value = cf ? cf.slice(0, 6).toUpperCase() : null;
+      } else {
+        const parts = sorgenteDato.split(".");
+        value = context;
+        for (const part of parts) {
+          value = value?.[part];
+        }
+        if (value instanceof Date) {
+          value = value.toLocaleDateString("it-IT");
+        }
       }
-      if (value instanceof Date) {
-        value = value.toLocaleDateString("it-IT");
-      }
+
       if (value == null) continue;
 
       const cellRef = `${column}${rowNum}`;
