@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -15,10 +15,12 @@ export async function GET(
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const mappings = await db.templateMapping.findMany({
-    where: { corsoCodec: params.codice },
-    include: { template: true },
-  });
+  const mappings = await withUserContext(user, (tx) =>
+    tx.templateMapping.findMany({
+      where: { corsoCodec: params.codice },
+      include: { template: true },
+    })
+  );
 
   return NextResponse.json({ success: true, mappings });
 }
@@ -36,10 +38,12 @@ export async function POST(
     const body = await request.json();
     const { templateId, modalita } = createMappingSchema.parse(body);
 
-    const mapping = await db.templateMapping.create({
-      data: { corsoCodec: params.codice, templateId, modalita: modalita || null },
-      include: { template: true },
-    });
+    const mapping = await withUserContext(user, (tx) =>
+      tx.templateMapping.create({
+        data: { corsoCodec: params.codice, templateId, modalita: modalita || null },
+        include: { template: true },
+      })
+    );
 
     return NextResponse.json({ success: true, mapping });
   } catch (error) {
@@ -63,7 +67,7 @@ export async function DELETE(
   const mappingId = searchParams.get("id");
   if (!mappingId) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  await db.templateMapping.delete({ where: { id: mappingId } });
+  await withUserContext(user, (tx) => tx.templateMapping.delete({ where: { id: mappingId } }));
 
   return NextResponse.json({ success: true });
 }

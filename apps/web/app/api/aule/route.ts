@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { parseXlsxFile } from "@gestionale/utils/xlsx-parser";
 import { validateDiscentiRows } from "@gestionale/utils/discenti-validator";
+import { blindIndex } from "@gestionale/utils/encryption";
 import { z } from "zod";
 
 const docenteAssignSchema = z.object({
@@ -32,16 +33,18 @@ export async function GET(request: NextRequest) {
   if (stato) where.stato = stato;
   if (corsoCodec) where.corsoCodec = corsoCodec;
 
-  const aule = await db.aula.findMany({
-    where,
-    include: {
-      corso: true,
-      luogo: true,
-      iscrizioni: { where: { deletedAt: null } },
-      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const aule = await withUserContext(user, (tx) =>
+    tx.aula.findMany({
+      where,
+      include: {
+        corso: true,
+        luogo: true,
+        iscrizioni: { where: { deletedAt: null } },
+        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   return NextResponse.json({ success: true, aule });
 }
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, errors: validationResult.errors }, { status: 400 });
     }
 
-    const aula = await db.$transaction(async (tx) => {
+    const aula = await withUserContext(user, async (tx) => {
       const newAula = await tx.aula.create({
         data: {
           corsoCodec: meta.corsoCodec,
@@ -102,8 +105,8 @@ export async function POST(request: NextRequest) {
 
         const { id: _discenteId, ...discenteData } = discente;
         const savedDiscente = await tx.discente.upsert({
-          where: { codiceFiscale: discente.codiceFiscale },
-          create: { ...discenteData, aziendaId: azienda.id },
+          where: { codiceFiscaleHash: blindIndex(discente.codiceFiscale) },
+          create: { ...discenteData, aziendaId: azienda.id, codiceFiscaleHash: blindIndex(discente.codiceFiscale) },
           update: discenteData,
         });
 

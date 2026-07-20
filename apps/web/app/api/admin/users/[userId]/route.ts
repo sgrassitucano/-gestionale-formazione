@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { hashPassword } from "@/lib/crypto";
 import { z } from "zod";
@@ -34,19 +34,23 @@ export async function PUT(
       updateData.passwordHash = await hashPassword(data.password);
     }
 
-    const updated = await db.profiloUtente.update({
-      where: { id: params.userId },
-      data: updateData,
-    });
+    const updated = await withUserContext(user, async (tx) => {
+      const updated = await tx.profiloUtente.update({
+        where: { id: params.userId },
+        data: updateData,
+      });
 
-    await db.logAudit.create({
-      data: {
-        utenteId: user.id,
-        azione: "UPDATE_USER",
-        tabella: "ProfiloUtente",
-        recordId: params.userId,
-        dettagli: { changes: data },
-      },
+      await tx.logAudit.create({
+        data: {
+          utenteId: user.id,
+          azione: "UPDATE_USER",
+          tabella: "ProfiloUtente",
+          recordId: params.userId,
+          dettagli: { changes: data },
+        },
+      });
+
+      return updated;
     });
 
     return NextResponse.json({ success: true, user: updated });
@@ -72,18 +76,20 @@ export async function DELETE(
     return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
   }
 
-  await db.profiloUtente.update({
-    where: { id: params.userId },
-    data: { deletedAt: new Date() },
-  });
+  await withUserContext(user, async (tx) => {
+    await tx.profiloUtente.update({
+      where: { id: params.userId },
+      data: { deletedAt: new Date() },
+    });
 
-  await db.logAudit.create({
-    data: {
-      utenteId: user.id,
-      azione: "DELETE_USER",
-      tabella: "ProfiloUtente",
-      recordId: params.userId,
-    },
+    await tx.logAudit.create({
+      data: {
+        utenteId: user.id,
+        azione: "DELETE_USER",
+        tabella: "ProfiloUtente",
+        recordId: params.userId,
+      },
+    });
   });
 
   return NextResponse.json({ success: true });

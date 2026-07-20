@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -24,7 +24,7 @@ export async function PUT(
     const body = await request.json();
     const data = updateLuogoSchema.parse(body);
 
-    const luogo = await db.luogo.update({ where: { id: params.id }, data });
+    const luogo = await withUserContext(user, (tx) => tx.luogo.update({ where: { id: params.id }, data }));
 
     return NextResponse.json({ success: true, luogo });
   } catch (error) {
@@ -44,7 +44,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.luogo.update({ where: { id: params.id }, data: { deletedAt: new Date() } });
+  await withUserContext(user, (tx) => tx.luogo.update({ where: { id: params.id }, data: { deletedAt: new Date() } }));
 
   return NextResponse.json({ success: true });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -22,15 +22,17 @@ export async function POST(
     const body = await request.json();
     const data = assignDocenteSchema.parse(body);
 
-    const docenteLezione = await db.docenteLezione.create({
-      data: {
-        aulaId: params.aulaId,
-        docenteId: data.docenteId,
-        oreEffettiveDocenza: data.oreEffettiveDocenza,
-        trasferAcosto: data.trasferAcosto,
-      },
-      include: { docente: true },
-    });
+    const docenteLezione = await withUserContext(user, (tx) =>
+      tx.docenteLezione.create({
+        data: {
+          aulaId: params.aulaId,
+          docenteId: data.docenteId,
+          oreEffettiveDocenza: data.oreEffettiveDocenza,
+          trasferAcosto: data.trasferAcosto,
+        },
+        include: { docente: true },
+      })
+    );
 
     return NextResponse.json({ success: true, docenteLezione });
   } catch (error) {
@@ -58,10 +60,12 @@ export async function DELETE(
   }
 
   // Soft-delete with substitution history: set dataFine
-  await db.docenteLezione.update({
-    where: { id: docenteLezioneId },
-    data: { dataFine: new Date() },
-  });
+  await withUserContext(user, (tx) =>
+    tx.docenteLezione.update({
+      where: { id: docenteLezioneId },
+      data: { dataFine: new Date() },
+    })
+  );
 
   return NextResponse.json({ success: true });
 }

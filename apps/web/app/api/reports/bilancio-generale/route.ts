@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { calculateRicavo, calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
 
 // Conta quanti mesi (inclusivi) intercorrono tra due date allo stesso "anno-mese"
@@ -33,13 +33,25 @@ export async function GET(request: NextRequest) {
   const rangeEnd = new Date(aY, aM, 0, 23, 59, 59);
 
   // Entrate/uscite derivate dalle aule
-  const aule = await db.aula.findMany({
-    where: { deletedAt: null, dataInizio: { gte: rangeStart, lte: rangeEnd } },
-    include: {
-      corso: { include: { listiniPrezzi: true } },
-      iscrizioni: { where: { deletedAt: null } },
-      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-    },
+  const { aule, voci } = await withUserContext(user, async (tx) => {
+    const aule = await tx.aula.findMany({
+      where: { deletedAt: null, stato: "CONCLUSA", dataInizio: { gte: rangeStart, lte: rangeEnd } },
+      include: {
+        corso: { include: { listiniPrezzi: true } },
+        iscrizioni: { where: { deletedAt: null } },
+        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+      },
+    });
+
+    const voci = await tx.voceContabile.findMany({
+      where: {
+        deletedAt: null,
+        dataInizio: { lte: rangeEnd },
+        OR: [{ dataFine: null }, { dataFine: { gte: rangeStart } }],
+      },
+    });
+
+    return { aule, voci };
   });
 
   let entrateAule = 0;
@@ -59,15 +71,6 @@ export async function GET(request: NextRequest) {
     );
     usciteAffitto += Number(aula.costoAffitto);
   }
-
-  // Voci manuali (ricorrenti e una tantum)
-  const voci = await db.voceContabile.findMany({
-    where: {
-      deletedAt: null,
-      dataInizio: { lte: rangeEnd },
-      OR: [{ dataFine: null }, { dataFine: { gte: rangeStart } }],
-    },
-  });
 
   const categorie: Record<string, { entrate: number; uscite: number }> = {
     Aule: { entrate: entrateAule, uscite: 0 },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { z } from "zod";
 
 const updateFieldSchema = z.object({
@@ -16,9 +16,11 @@ export async function GET(
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const campi = await db.templateField.findMany({
-    where: { templateId: params.templateId },
-  });
+  const campi = await withUserContext(user, (tx) =>
+    tx.templateField.findMany({
+      where: { templateId: params.templateId },
+    })
+  );
 
   return NextResponse.json({ success: true, campi });
 }
@@ -37,10 +39,12 @@ export async function PUT(
     const body = await request.json();
     const { nomeCampo, sorgenteDato } = updateFieldSchema.parse(body);
 
-    const field = await db.templateField.updateMany({
-      where: { templateId: params.templateId, nomeCampo },
-      data: { sorgenteDato },
-    });
+    const field = await withUserContext(user, (tx) =>
+      tx.templateField.updateMany({
+        where: { templateId: params.templateId, nomeCampo },
+        data: { sorgenteDato },
+      })
+    );
 
     return NextResponse.json({ success: true, field });
   } catch (error) {

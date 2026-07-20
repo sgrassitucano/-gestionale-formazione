@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -24,11 +24,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const corsi = await db.catalogoCorso.findMany({
-      where: { deletedAt: null },
-      include: { templates: { select: { modalita: true } } },
-      orderBy: { codice: "asc" },
-    });
+    const corsi = await withUserContext(user, (tx) =>
+      tx.catalogoCorso.findMany({
+        where: { deletedAt: null },
+        include: { templates: { select: { modalita: true } } },
+        orderBy: { codice: "asc" },
+      })
+    );
 
     return NextResponse.json({
       success: true,
@@ -57,17 +59,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createCorsoSchema.parse(body);
 
-    const corso = await db.catalogoCorso.create({
-      data: {
-        codice: data.codice,
-        titolo: data.titolo,
-        tipo: data.tipo as any,
-        oreAula: data.oreAula,
-        oreElearning: data.oreElearning,
-        validitaAnni: data.validitaAnni,
-        modalitaConsentite: data.modalitaConsentite,
-      },
-    });
+    const corso = await withUserContext(user, (tx) =>
+      tx.catalogoCorso.create({
+        data: {
+          codice: data.codice,
+          titolo: data.titolo,
+          tipo: data.tipo as any,
+          oreAula: data.oreAula,
+          oreElearning: data.oreElearning,
+          validitaAnni: data.validitaAnni,
+          modalitaConsentite: data.modalitaConsentite,
+        },
+      })
+    );
 
     return NextResponse.json({
       success: true,

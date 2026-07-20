@@ -36,3 +36,14 @@ export async function downloadFile(bucket: string, path: string): Promise<Buffer
 export async function deleteFile(bucket: string, path: string): Promise<void> {
   await storageClient.storage.from(bucket).remove([path]);
 }
+
+// Estrae il path relativo al bucket dalla URL "pubblica" salvata in DB.
+// I bucket sono privati: questa URL non è mai raggiungibile direttamente dal
+// browser, serve solo come formato stabile per ricavare bucket+path lato
+// server (download sempre via service role, mai esposto al client).
+export function pathFromFileUrl(bucket: string, fileUrl: string): string | null {
+  const marker = `/object/public/${bucket}/`;
+  const idx = fileUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return fileUrl.slice(idx + marker.length);
+}

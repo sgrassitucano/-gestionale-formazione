@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 
 export async function PUT(
@@ -18,10 +18,12 @@ export async function PUT(
     if (body.oraInizio) data.oraInizio = body.oraInizio;
     if (body.oraFine) data.oraFine = body.oraFine;
 
-    const lezione = await db.lezione.update({
-      where: { id: params.lezioneId },
-      data,
-    });
+    const lezione = await withUserContext(user, (tx) =>
+      tx.lezione.update({
+        where: { id: params.lezioneId },
+        data,
+      })
+    );
 
     return NextResponse.json({ success: true, lezione });
   } catch (error) {
@@ -38,10 +40,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.lezione.update({
-    where: { id: params.lezioneId },
-    data: { deletedAt: new Date() },
-  });
+  await withUserContext(user, (tx) =>
+    tx.lezione.update({
+      where: { id: params.lezioneId },
+      data: { deletedAt: new Date() },
+    })
+  );
 
   return NextResponse.json({ success: true });
 }

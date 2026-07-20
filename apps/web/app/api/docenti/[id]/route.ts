@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -23,7 +23,7 @@ export async function PUT(
     const body = await request.json();
     const data = updateDocenteSchema.parse(body);
 
-    const docente = await db.docente.update({ where: { id: params.id }, data });
+    const docente = await withUserContext(user, (tx) => tx.docente.update({ where: { id: params.id }, data }));
 
     return NextResponse.json({ success: true, docente });
   } catch (error) {
@@ -43,7 +43,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.docente.update({ where: { id: params.id }, data: { deletedAt: new Date() } });
+  await withUserContext(user, (tx) => tx.docente.update({ where: { id: params.id }, data: { deletedAt: new Date() } }));
 
   return NextResponse.json({ success: true });
 }

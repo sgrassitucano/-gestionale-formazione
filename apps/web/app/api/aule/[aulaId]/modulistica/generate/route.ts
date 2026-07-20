@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { downloadFile, BUCKETS } from "@/lib/storage";
 import {
@@ -35,21 +35,23 @@ export async function POST(
   }
 
   try {
-    const [template, aula] = await Promise.all([
-      db.template.findUnique({
-        where: { id: templateId },
-        include: { campi: true },
-      }),
-      db.aula.findUnique({
-        where: { id: params.aulaId },
-        include: {
-          corso: true,
-          luogo: true,
-          iscrizioni: { include: { discente: true } },
-          docentilezioni: { include: { docente: true } },
-        },
-      }),
-    ]);
+    const [template, aula] = await withUserContext(user, (tx) =>
+      Promise.all([
+        tx.template.findUnique({
+          where: { id: templateId },
+          include: { campi: true },
+        }),
+        tx.aula.findUnique({
+          where: { id: params.aulaId },
+          include: {
+            corso: true,
+            luogo: true,
+            iscrizioni: { include: { discente: true } },
+            docentilezioni: { include: { docente: true } },
+          },
+        }),
+      ])
+    );
 
     if (!template || !aula) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 
 function monthRange(mese: string) {
@@ -17,15 +17,17 @@ export async function GET(request: NextRequest) {
 
   const { start, end } = monthRange(mese);
 
-  const aule = await db.aula.findMany({
-    where: { deletedAt: null, dataInizio: { gte: start, lte: end } },
-    include: {
-      corso: { include: { listiniPrezzi: true } },
-      luogo: true,
-      iscrizioni: { where: { deletedAt: null } },
-      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-    },
-  });
+  const aule = await withUserContext(user, (tx) =>
+    tx.aula.findMany({
+      where: { deletedAt: null, dataInizio: { gte: start, lte: end } },
+      include: {
+        corso: { include: { listiniPrezzi: true } },
+        luogo: true,
+        iscrizioni: { where: { deletedAt: null } },
+        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+      },
+    })
+  );
 
   const singole = aule
     .filter((a) => a.modalita === "PRESENZA" || a.modalita === "FAD_SINCRONA")

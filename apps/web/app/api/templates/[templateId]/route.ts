@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { z } from "zod";
 
 const updateTemplateSchema = z.object({
@@ -15,10 +15,12 @@ export async function GET(
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const template = await db.template.findUnique({
-    where: { id: params.templateId },
-    include: { mappings: { include: { corso: true } }, campi: true },
-  });
+  const template = await withUserContext(user, (tx) =>
+    tx.template.findUnique({
+      where: { id: params.templateId },
+      include: { mappings: { include: { corso: true } }, campi: true },
+    })
+  );
 
   if (!template || template.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -40,10 +42,12 @@ export async function PUT(
     const body = await request.json();
     const data = updateTemplateSchema.parse(body);
 
-    const template = await db.template.update({
-      where: { id: params.templateId },
-      data,
-    });
+    const template = await withUserContext(user, (tx) =>
+      tx.template.update({
+        where: { id: params.templateId },
+        data,
+      })
+    );
 
     return NextResponse.json({ success: true, template });
   } catch (error) {
@@ -63,10 +67,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.template.update({
-    where: { id: params.templateId },
-    data: { deletedAt: new Date() },
-  });
+  await withUserContext(user, (tx) =>
+    tx.template.update({
+      where: { id: params.templateId },
+      data: { deletedAt: new Date() },
+    })
+  );
 
   return NextResponse.json({ success: true });
 }

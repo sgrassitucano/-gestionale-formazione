@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { getGoogleOAuthConfig } from "@/lib/settings";
 import {
@@ -19,147 +19,151 @@ export async function POST(
   }
 
   try {
-    const [config, gcalConfig, aula] = await Promise.all([
-      getGoogleOAuthConfig(),
-      db.googleCalendarConfig.findUnique({ where: { utenteId: user.id } }),
-      db.aula.findUnique({
-        where: { id: params.aulaId },
-        include: { corso: true, luogo: true, lezioni: { where: { deletedAt: null } } },
-      }),
-    ]);
+    const result = await withUserContext(user, async (tx) => {
+      const [config, gcalConfig, aula] = await Promise.all([
+        getGoogleOAuthConfig(),
+        tx.googleCalendarConfig.findUnique({ where: { utenteId: user.id } }),
+        tx.aula.findUnique({
+          where: { id: params.aulaId },
+          include: { corso: true, luogo: true, lezioni: { where: { deletedAt: null } } },
+        }),
+      ]);
 
-    if (!config) {
-      return NextResponse.json({ error: "Google OAuth not configured" }, { status: 400 });
-    }
-    if (!gcalConfig || !gcalConfig.syncEnabled) {
-      return NextResponse.json({ error: "Google Calendar not connected for this user" }, { status: 400 });
-    }
-    if (!aula) {
-      return NextResponse.json({ error: "Aula not found" }, { status: 404 });
-    }
-
-    let accessToken = decrypt(gcalConfig.accessTokenEncrypted);
-
-    // Refresh if expired
-    if (gcalConfig.expiresAt && gcalConfig.expiresAt < new Date()) {
-      const refreshToken = decrypt(gcalConfig.refreshTokenEncrypted);
-      const refreshed = await refreshAccessToken(
-        config.clientId,
-        config.clientSecret,
-        config.redirectUri,
-        refreshToken
-      );
-      accessToken = refreshed.accessToken;
-
-      await db.googleCalendarConfig.update({
-        where: { utenteId: user.id },
-        data: {
-          accessTokenEncrypted: encrypt(accessToken),
-          expiresAt: refreshed.expiresAt,
-        },
-      });
-    }
-
-    let syncedCount = 0;
-    let failedCount = 0;
-    const errors: string[] = [];
-
-    if (aula.modalita === "FAD_ASINCRONA") {
-      if (!aula.dataFine) {
-        return NextResponse.json({ error: "Imposta prima una scadenza" }, { status: 400 });
+      if (!config) {
+        return { status: 400 as const, body: { error: "Google OAuth not configured" } };
+      }
+      if (!gcalConfig || !gcalConfig.syncEnabled) {
+        return { status: 400 as const, body: { error: "Google Calendar not connected for this user" } };
+      }
+      if (!aula) {
+        return { status: 404 as const, body: { error: "Aula not found" } };
       }
 
-      try {
-        const eventInput = {
-          summary: `Scadenza: ${aula.corso.titolo}`,
-          description: `Corso e-learning da completare entro questa data: ${aula.corso.titolo}`,
-          location: "",
-          startDateTime: combineDateTime(aula.dataFine, "09:00"),
-          endDateTime: combineDateTime(aula.dataFine, "09:30"),
-        };
+      let accessToken = decrypt(gcalConfig.accessTokenEncrypted);
 
-        if (aula.googleCalendarEventId) {
-          await updateCalendarEvent(
-            config.clientId,
-            config.clientSecret,
-            config.redirectUri,
-            accessToken,
-            gcalConfig.calendarId,
-            aula.googleCalendarEventId,
-            eventInput
-          );
-        } else {
-          const eventId = await createCalendarEvent(
-            config.clientId,
-            config.clientSecret,
-            config.redirectUri,
-            accessToken,
-            gcalConfig.calendarId,
-            eventInput
-          );
+      // Refresh if expired
+      if (gcalConfig.expiresAt && gcalConfig.expiresAt < new Date()) {
+        const refreshToken = decrypt(gcalConfig.refreshTokenEncrypted);
+        const refreshed = await refreshAccessToken(
+          config.clientId,
+          config.clientSecret,
+          config.redirectUri,
+          refreshToken
+        );
+        accessToken = refreshed.accessToken;
 
-          await db.aula.update({
-            where: { id: aula.id },
-            data: { googleCalendarEventId: eventId },
-          });
+        await tx.googleCalendarConfig.update({
+          where: { utenteId: user.id },
+          data: {
+            accessTokenEncrypted: encrypt(accessToken),
+            expiresAt: refreshed.expiresAt,
+          },
+        });
+      }
+
+      let syncedCount = 0;
+      let failedCount = 0;
+      const errors: string[] = [];
+
+      if (aula.modalita === "FAD_ASINCRONA") {
+        if (!aula.dataFine) {
+          return { status: 400 as const, body: { error: "Imposta prima una scadenza" } };
         }
 
-        syncedCount = 1;
-      } catch (err: any) {
-        failedCount = 1;
-        errors.push(`Scadenza aula: ${err.message}`);
-      }
+        try {
+          const eventInput = {
+            summary: `Scadenza: ${aula.corso.titolo}`,
+            description: `Corso e-learning da completare entro questa data: ${aula.corso.titolo}`,
+            location: "",
+            startDateTime: combineDateTime(aula.dataFine, "09:00"),
+            endDateTime: combineDateTime(aula.dataFine, "09:30"),
+          };
 
-      return NextResponse.json({ success: true, syncedCount, failedCount, errors });
-    }
+          if (aula.googleCalendarEventId) {
+            await updateCalendarEvent(
+              config.clientId,
+              config.clientSecret,
+              config.redirectUri,
+              accessToken,
+              gcalConfig.calendarId,
+              aula.googleCalendarEventId,
+              eventInput
+            );
+          } else {
+            const eventId = await createCalendarEvent(
+              config.clientId,
+              config.clientSecret,
+              config.redirectUri,
+              accessToken,
+              gcalConfig.calendarId,
+              eventInput
+            );
 
-    for (const lezione of aula.lezioni) {
-      try {
-        const startDateTime = combineDateTime(lezione.data, lezione.oraInizio);
-        const endDateTime = combineDateTime(lezione.data, lezione.oraFine);
+            await tx.aula.update({
+              where: { id: aula.id },
+              data: { googleCalendarEventId: eventId },
+            });
+          }
 
-        const eventInput = {
-          summary: `${aula.corso.titolo} — ${aula.luogo?.nome ?? ""}`,
-          description: `Lezione formazione: ${aula.corso.titolo}`,
-          location: aula.luogo?.nome ?? "",
-          startDateTime,
-          endDateTime,
-        };
-
-        if (lezione.googleCalendarEventId) {
-          await updateCalendarEvent(
-            config.clientId,
-            config.clientSecret,
-            config.redirectUri,
-            accessToken,
-            gcalConfig.calendarId,
-            lezione.googleCalendarEventId,
-            eventInput
-          );
-        } else {
-          const eventId = await createCalendarEvent(
-            config.clientId,
-            config.clientSecret,
-            config.redirectUri,
-            accessToken,
-            gcalConfig.calendarId,
-            eventInput
-          );
-
-          await db.lezione.update({
-            where: { id: lezione.id },
-            data: { googleCalendarEventId: eventId, googleCalendarSyncAt: new Date() },
-          });
+          syncedCount = 1;
+        } catch (err: any) {
+          failedCount = 1;
+          errors.push(`Scadenza aula: ${err.message}`);
         }
 
-        syncedCount++;
-      } catch (err: any) {
-        failedCount++;
-        errors.push(`Lezione ${lezione.id}: ${err.message}`);
+        return { status: 200 as const, body: { success: true, syncedCount, failedCount, errors } };
       }
-    }
 
-    return NextResponse.json({ success: true, syncedCount, failedCount, errors });
+      for (const lezione of aula.lezioni) {
+        try {
+          const startDateTime = combineDateTime(lezione.data, lezione.oraInizio);
+          const endDateTime = combineDateTime(lezione.data, lezione.oraFine);
+
+          const eventInput = {
+            summary: `${aula.corso.titolo} — ${aula.luogo?.nome ?? ""}`,
+            description: `Lezione formazione: ${aula.corso.titolo}`,
+            location: aula.luogo?.nome ?? "",
+            startDateTime,
+            endDateTime,
+          };
+
+          if (lezione.googleCalendarEventId) {
+            await updateCalendarEvent(
+              config.clientId,
+              config.clientSecret,
+              config.redirectUri,
+              accessToken,
+              gcalConfig.calendarId,
+              lezione.googleCalendarEventId,
+              eventInput
+            );
+          } else {
+            const eventId = await createCalendarEvent(
+              config.clientId,
+              config.clientSecret,
+              config.redirectUri,
+              accessToken,
+              gcalConfig.calendarId,
+              eventInput
+            );
+
+            await tx.lezione.update({
+              where: { id: lezione.id },
+              data: { googleCalendarEventId: eventId, googleCalendarSyncAt: new Date() },
+            });
+          }
+
+          syncedCount++;
+        } catch (err: any) {
+          failedCount++;
+          errors.push(`Lezione ${lezione.id}: ${err.message}`);
+        }
+      }
+
+      return { status: 200 as const, body: { success: true, syncedCount, failedCount, errors } };
+    });
+
+    return NextResponse.json(result.body, result.status !== 200 ? { status: result.status } : undefined);
   } catch (error) {
     console.error("GCal sync error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

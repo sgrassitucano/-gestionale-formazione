@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -13,11 +13,13 @@ export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const listini = await db.listinoPrezzi.findMany({
-    where: { deletedAt: null },
-    include: { corso: true },
-    orderBy: { corsoCodec: "asc" },
-  });
+  const listini = await withUserContext(user, (tx) =>
+    tx.listinoPrezzi.findMany({
+      where: { deletedAt: null },
+      include: { corso: true },
+      orderBy: { corsoCodec: "asc" },
+    })
+  );
 
   return NextResponse.json({ success: true, listini });
 }
@@ -32,16 +34,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = upsertListinoSchema.parse(body);
 
-    const listino = await db.listinoPrezzi.upsert({
-      where: {
-        corsoCodec_tipoErogazione: {
-          corsoCodec: data.corsoCodec,
-          tipoErogazione: data.tipoErogazione as any,
+    const listino = await withUserContext(user, (tx) =>
+      tx.listinoPrezzi.upsert({
+        where: {
+          corsoCodec_tipoErogazione: {
+            corsoCodec: data.corsoCodec,
+            tipoErogazione: data.tipoErogazione as any,
+          },
         },
-      },
-      create: data as any,
-      update: { costo: data.costo },
-    });
+        create: data as any,
+        update: { costo: data.costo },
+      })
+    );
 
     return NextResponse.json({ success: true, listino });
   } catch (error) {

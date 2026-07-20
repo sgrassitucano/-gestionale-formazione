@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "./lib/jwt";
 import { getSessionToken } from "./lib/session";
 
-const PREVIEW_MODE = true; // TODO: remove — bypass temporaneo per test senza login, login rotto da sistemare
+const PREVIEW_MODE = true; // TODO: rimuovere quando si vuole attivare il login vero (bug risolto, verificato — vedi lib/crypto.ts)
 const PREVIEW_USER = {
   id: "cmrex51bi0000qi34k6c344eb", // s.grassi@iltucano.net
   email: "s.grassi@iltucano.net",
@@ -11,7 +11,7 @@ const PREVIEW_USER = {
   cognome: "Grassi",
 };
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (PREVIEW_MODE) {
     const response = NextResponse.next();
     response.headers.set("x-user-id", PREVIEW_USER.id);
@@ -48,7 +48,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Verify token
-  const user = verifyToken(token);
+  const user = await verifyToken(token);
 
   if (!user) {
     // Invalid or expired token → redirect to login

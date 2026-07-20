@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { z } from "zod";
 
 const createMappingSchema = z.object({
@@ -15,10 +15,12 @@ export async function GET(
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const mappings = await db.templateMapping.findMany({
-    where: { templateId: params.templateId },
-    include: { corso: true },
-  });
+  const mappings = await withUserContext(user, (tx) =>
+    tx.templateMapping.findMany({
+      where: { templateId: params.templateId },
+      include: { corso: true },
+    })
+  );
 
   return NextResponse.json({ success: true, mappings });
 }
@@ -36,13 +38,15 @@ export async function POST(
     const body = await request.json();
     const { corsoCodec, modalita } = createMappingSchema.parse(body);
 
-    const mapping = await db.templateMapping.create({
-      data: {
-        templateId: params.templateId,
-        corsoCodec: corsoCodec || null,
-        modalita: modalita || null,
-      },
-    });
+    const mapping = await withUserContext(user, (tx) =>
+      tx.templateMapping.create({
+        data: {
+          templateId: params.templateId,
+          corsoCodec: corsoCodec || null,
+          modalita: modalita || null,
+        },
+      })
+    );
 
     return NextResponse.json({ success: true, mapping });
   } catch (error) {
@@ -70,9 +74,11 @@ export async function DELETE(
     return NextResponse.json({ error: "corsoCodec required" }, { status: 400 });
   }
 
-  await db.templateMapping.deleteMany({
-    where: { templateId: params.templateId, corsoCodec, modalita: (modalita as any) || null },
-  });
+  await withUserContext(user, (tx) =>
+    tx.templateMapping.deleteMany({
+      where: { templateId: params.templateId, corsoCodec, modalita: (modalita as any) || null },
+    })
+  );
 
   return NextResponse.json({ success: true });
 }

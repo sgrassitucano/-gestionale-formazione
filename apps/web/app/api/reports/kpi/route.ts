@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
 import { buildRevenueTrend } from "@gestionale/utils/kpi-calculator";
 
@@ -13,24 +13,26 @@ export async function GET(request: NextRequest) {
   const dataFineStr = searchParams.get("dataFine");
   const corsoCodec = searchParams.get("corso");
 
-  const where: any = { deletedAt: null };
+  const where: any = { deletedAt: null, stato: "CONCLUSA" };
   if (dataInizioStr && dataFineStr) {
     where.dataInizio = { gte: new Date(dataInizioStr), lte: new Date(dataFineStr) };
   }
   if (corsoCodec) where.corsoCodec = corsoCodec;
 
-  const [aulesAttive, aulesConcluse, aule] = await Promise.all([
-    db.aula.count({ where: { stato: { in: ["PIANIFICATA", "IN_CORSO"] }, deletedAt: null } }),
-    db.aula.count({ where: { stato: "CONCLUSA", deletedAt: null } }),
-    db.aula.findMany({
-      where,
-      include: {
-        corso: { include: { listiniPrezzi: true } },
-        iscrizioni: { where: { deletedAt: null } },
-        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-      },
-    }),
-  ]);
+  const [aulesAttive, aulesConcluse, aule] = await withUserContext(user, (tx) =>
+    Promise.all([
+      tx.aula.count({ where: { stato: { in: ["PIANIFICATA", "IN_CORSO"] }, deletedAt: null } }),
+      tx.aula.count({ where: { stato: "CONCLUSA", deletedAt: null } }),
+      tx.aula.findMany({
+        where,
+        include: {
+          corso: { include: { listiniPrezzi: true } },
+          iscrizioni: { where: { deletedAt: null } },
+          docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+        },
+      }),
+    ])
+  );
 
   const discentiPerCorso: Record<string, number> = {};
   const marginePerTipo: Record<string, number> = {};
@@ -38,6 +40,7 @@ export async function GET(request: NextRequest) {
   let discentiTotalCount = 0;
   let margineTotaleSum = 0;
   let ricavoTotaleSum = 0;
+  let costoTotaleSum = 0;
 
   for (const a of aule) {
     const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
@@ -50,7 +53,8 @@ export async function GET(request: NextRequest) {
         trasferAcosto: Number(dl.trasferAcosto),
       }))
     );
-    const bilancio = calculateBilancio(ricavo, costoDocenti + Number(a.costoAffitto));
+    const costoTotaleAula = costoDocenti + Number(a.costoAffitto);
+    const bilancio = calculateBilancio(ricavo, costoTotaleAula);
 
     const corsoTitolo = a.corso.titolo;
     discentiPerCorso[corsoTitolo] = (discentiPerCorso[corsoTitolo] || 0) + a.iscrizioni.length;
@@ -59,11 +63,12 @@ export async function GET(request: NextRequest) {
     marginePerTipo[a.corso.tipo] = (marginePerTipo[a.corso.tipo] || 0) + bilancio.margine;
     margineTotaleSum += bilancio.margine;
     ricavoTotaleSum += bilancio.ricavo;
+    costoTotaleSum += costoTotaleAula;
 
     if (a.dataInizio) revenueSnapshots.push({ dataChiusura: a.dataInizio, ricavo: bilancio.ricavo });
   }
 
-  const costoMedioDiscente = discentiTotalCount > 0 ? margineTotaleSum / discentiTotalCount : 0;
+  const costoMedioDiscente = discentiTotalCount > 0 ? costoTotaleSum / discentiTotalCount : 0;
   const revenueTrend = buildRevenueTrend(revenueSnapshots);
 
   return NextResponse.json({

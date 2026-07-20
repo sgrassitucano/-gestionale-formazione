@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { downloadFile, BUCKETS } from "@/lib/storage";
 import {
   generateDocxFromTemplate,
@@ -38,10 +38,12 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const template = await db.template.findUnique({
-      where: { id: params.templateId },
-      include: { campi: true },
-    });
+    const template = await withUserContext(user, (tx) =>
+      tx.template.findUnique({
+        where: { id: params.templateId },
+        include: { campi: true },
+      })
+    );
 
     if (!template || template.deletedAt) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

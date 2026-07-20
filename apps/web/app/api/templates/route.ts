@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { uploadFile, BUCKETS } from "@/lib/storage";
 import { extractFieldsFromTemplate, COMMON_FIELD_MAPPINGS } from "@gestionale/utils/template-field-extractor";
 
@@ -8,11 +8,13 @@ export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const templates = await db.template.findMany({
-    where: { deletedAt: null },
-    include: { mappings: { include: { corso: true } }, campi: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const templates = await withUserContext(user, (tx) =>
+    tx.template.findMany({
+      where: { deletedAt: null },
+      include: { mappings: { include: { corso: true } }, campi: true },
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   return NextResponse.json({ success: true, templates });
 }
@@ -38,36 +40,40 @@ export async function POST(request: NextRequest) {
 
     const fileUrl = await uploadFile(BUCKETS.TEMPLATES, path, buffer, file.type);
 
-    const template = await db.template.create({
-      data: {
-        nome,
-        fileUrl,
-        mimeType: file.type,
-        tipoGenerazione: tipoGenerazione as any,
-        creatoDay: user.id,
-      },
-    });
+    const { template, extractedFields } = await withUserContext(user, async (tx) => {
+      const template = await tx.template.create({
+        data: {
+          nome,
+          fileUrl,
+          mimeType: file.type,
+          tipoGenerazione: tipoGenerazione as any,
+          creatoDay: user.id,
+        },
+      });
 
-    // Auto-extract fields (non per i template statici, non generati)
-    let extractedFields: any[] = [];
-    if (tipoGenerazione !== "STATICO") {
-      try {
-        extractedFields = await extractFieldsFromTemplate(buffer, file.type);
+      // Auto-extract fields (non per i template statici, non generati)
+      let extractedFields: any[] = [];
+      if (tipoGenerazione !== "STATICO") {
+        try {
+          extractedFields = await extractFieldsFromTemplate(buffer, file.type);
 
-        for (const field of extractedFields) {
-          await db.templateField.create({
-            data: {
-              templateId: template.id,
-              nomeCampo: field.nomeCampo,
-              placeholder: field.placeholder,
-              sorgenteDato: COMMON_FIELD_MAPPINGS[field.nomeCampo] || "",
-            },
-          });
+          for (const field of extractedFields) {
+            await tx.templateField.create({
+              data: {
+                templateId: template.id,
+                nomeCampo: field.nomeCampo,
+                placeholder: field.placeholder,
+                sorgenteDato: COMMON_FIELD_MAPPINGS[field.nomeCampo] || "",
+              },
+            });
+          }
+        } catch (extractError) {
+          console.error("Field extraction error:", extractError);
         }
-      } catch (extractError) {
-        console.error("Field extraction error:", extractError);
       }
-    }
+
+      return { template, extractedFields };
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -17,10 +17,12 @@ export async function GET(
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const iscrizioni = await db.iscrizioneAula.findMany({
-    where: { aulaId: params.aulaId, deletedAt: null },
-    include: { discente: true },
-  });
+  const iscrizioni = await withUserContext(user, (tx) =>
+    tx.iscrizioneAula.findMany({
+      where: { aulaId: params.aulaId, deletedAt: null },
+      include: { discente: true },
+    })
+  );
 
   return NextResponse.json({ success: true, iscrizioni });
 }
@@ -38,16 +40,18 @@ export async function POST(
     const body = await request.json();
     const data = addIscrizioneSchema.parse(body);
 
-    const iscrizione = await db.iscrizioneAula.create({
-      data: {
-        aulaId: params.aulaId,
-        discenteId: data.discenteId,
-        cantiere: data.cantiere,
-        sottocantiere: data.sottocantiere,
-        responsabile: data.responsabile,
-      },
-      include: { discente: true },
-    });
+    const iscrizione = await withUserContext(user, (tx) =>
+      tx.iscrizioneAula.create({
+        data: {
+          aulaId: params.aulaId,
+          discenteId: data.discenteId,
+          cantiere: data.cantiere,
+          sottocantiere: data.sottocantiere,
+          responsabile: data.responsabile,
+        },
+        include: { discente: true },
+      })
+    );
 
     return NextResponse.json({ success: true, iscrizione });
   } catch (error) {
@@ -74,10 +78,12 @@ export async function DELETE(
     return NextResponse.json({ error: "discenteId required" }, { status: 400 });
   }
 
-  await db.iscrizioneAula.updateMany({
-    where: { aulaId: params.aulaId, discenteId },
-    data: { deletedAt: new Date() },
-  });
+  await withUserContext(user, (tx) =>
+    tx.iscrizioneAula.updateMany({
+      where: { aulaId: params.aulaId, discenteId },
+      data: { deletedAt: new Date() },
+    })
+  );
 
   return NextResponse.json({ success: true });
 }

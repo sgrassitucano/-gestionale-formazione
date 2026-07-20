@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withServiceContext } from "@gestionale/db/context";
 import { getGoogleOAuthConfig } from "@/lib/settings";
 import { exchangeCodeForToken } from "@gestionale/utils/google-calendar-oauth";
 import { encrypt } from "@gestionale/utils/encryption";
@@ -21,23 +21,25 @@ export async function GET(request: NextRequest) {
 
     const tokens = await exchangeCodeForToken(config.clientId, config.clientSecret, config.redirectUri, code);
 
-    await db.googleCalendarConfig.upsert({
-      where: { utenteId: userId },
-      create: {
-        utenteId: userId,
-        calendarId: "primary",
-        accessTokenEncrypted: encrypt(tokens.accessToken),
-        refreshTokenEncrypted: encrypt(tokens.refreshToken),
-        expiresAt: tokens.expiresAt,
-        syncEnabled: true,
-      },
-      update: {
-        accessTokenEncrypted: encrypt(tokens.accessToken),
-        refreshTokenEncrypted: encrypt(tokens.refreshToken),
-        expiresAt: tokens.expiresAt,
-        syncEnabled: true,
-      },
-    });
+    await withServiceContext((tx) =>
+      tx.googleCalendarConfig.upsert({
+        where: { utenteId: userId },
+        create: {
+          utenteId: userId,
+          calendarId: "primary",
+          accessTokenEncrypted: encrypt(tokens.accessToken),
+          refreshTokenEncrypted: encrypt(tokens.refreshToken),
+          expiresAt: tokens.expiresAt,
+          syncEnabled: true,
+        },
+        update: {
+          accessTokenEncrypted: encrypt(tokens.accessToken),
+          refreshTokenEncrypted: encrypt(tokens.refreshToken),
+          expiresAt: tokens.expiresAt,
+          syncEnabled: true,
+        },
+      })
+    );
 
     return NextResponse.redirect(new URL("/modulo-3/aule?gcal_success=1", request.url));
   } catch (error) {

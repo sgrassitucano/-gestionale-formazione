@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 
 export async function GET(
@@ -9,17 +9,20 @@ export async function GET(
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const aula = await db.aula.findUnique({
-    where: { id: params.aulaId },
-    include: {
-      corso: true,
-      luogo: true,
-      lezioni: { where: { deletedAt: null }, orderBy: { data: "asc" } },
-      iscrizioni: { where: { deletedAt: null }, include: { discente: true } },
-      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-      archivio: { where: { deletedAt: null } },
-    },
-  });
+  const aula = await withUserContext(user, (tx) =>
+    tx.aula.findUnique({
+      where: { id: params.aulaId },
+      include: {
+        corso: true,
+        luogo: true,
+        lezioni: { where: { deletedAt: null }, orderBy: { data: "asc" } },
+        iscrizioni: { where: { deletedAt: null }, include: { discente: true } },
+        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+        archivio: { where: { deletedAt: null } },
+        chiusura: true,
+      },
+    })
+  );
 
   if (!aula || aula.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -47,7 +50,9 @@ export async function PUT(
       }
     }
 
-    const aula = await db.aula.update({ where: { id: params.aulaId }, data });
+    const aula = await withUserContext(user, (tx) =>
+      tx.aula.update({ where: { id: params.aulaId }, data })
+    );
 
     return NextResponse.json({ success: true, aula });
   } catch (error) {

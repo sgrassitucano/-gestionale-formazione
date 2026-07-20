@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const permissions = await db.moduloPermesso.findMany();
+    const permissions = await withUserContext(user, (tx) => tx.moduloPermesso.findMany());
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -27,22 +27,24 @@ export async function PUT(
 
     const { ruolo, visible } = updatePermissionSchema.parse(body);
 
-    const permission = await db.moduloPermesso.upsert({
-      where: {
-        ruolo_moduloId: {
+    const permission = await withUserContext(user, (tx) =>
+      tx.moduloPermesso.upsert({
+        where: {
+          ruolo_moduloId: {
+            ruolo,
+            moduloId,
+          },
+        },
+        create: {
           ruolo,
           moduloId,
+          visible,
         },
-      },
-      create: {
-        ruolo,
-        moduloId,
-        visible,
-      },
-      update: {
-        visible,
-      },
-    });
+        update: {
+          visible,
+        },
+      })
+    );
 
     return NextResponse.json({
       success: true,

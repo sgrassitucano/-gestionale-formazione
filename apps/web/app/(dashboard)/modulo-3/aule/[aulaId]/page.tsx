@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { AulaCalendar } from "@/components/calendar/AulaCalendar";
+import { ChiusuraAulaPanel } from "@/components/forms/ChiusuraAulaPanel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
-type Tab = "calendario" | "discenti" | "docenti" | "modulistica" | "gcal";
+type Tab = "calendario" | "discenti" | "docenti" | "modulistica" | "gcal" | "chiusura";
 
 const STATO_VARIANT: Record<string, "warning" | "default" | "success"> = {
   PIANIFICATA: "warning",
@@ -38,6 +39,7 @@ const ALL_TABS: Array<{ key: Tab; label: string; icon: any }> = [
   { key: "docenti", label: "Docenti", icon: UserCog },
   { key: "modulistica", label: "Modulistica", icon: FileText },
   { key: "gcal", label: "Google Calendar", icon: Link2 },
+  { key: "chiusura", label: "Chiusura Aula", icon: CheckCircle2 },
 ];
 
 export default function AulaDetailPage() {
@@ -78,7 +80,11 @@ export default function AulaDetailPage() {
   if (loading || !aula) return <div className="text-muted-foreground">Loading...</div>;
 
   const isAsincrona = aula.modalita === "FAD_ASINCRONA";
-  const TABS = ALL_TABS.filter((t) => !(t.key === "docenti" && isAsincrona));
+  const TABS = ALL_TABS.filter(
+    (t) =>
+      !(t.key === "docenti" && isAsincrona) &&
+      !(t.key === "chiusura" && aula.stato !== "CONCLUSA")
+  );
   const activeTab = tab ?? TABS[0].key;
 
   return (
@@ -96,7 +102,7 @@ export default function AulaDetailPage() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">{aula.corso?.titolo}</h1>
               <p className="text-muted-foreground">{aula.luogo?.nome ?? "-"}</p>
-              <Badge variant={STATO_VARIANT[aula.stato]} className="mt-2">{aula.stato}</Badge>
+              <Badge variant={STATO_VARIANT[aula.stato]} dot className="mt-2">{aula.stato}</Badge>
             </div>
             <div className="flex gap-2">
               {aula.stato === "PIANIFICATA" && (
@@ -127,6 +133,7 @@ export default function AulaDetailPage() {
       {activeTab === "docenti" && <DocentiTab aula={aula} onUpdate={loadAula} />}
       {activeTab === "modulistica" && <ModulisticaTab aula={aula} />}
       {activeTab === "gcal" && <GCalTab aula={aula} />}
+      {activeTab === "chiusura" && <ChiusuraAulaPanel aula={aula} />}
     </div>
   );
 }
@@ -345,10 +352,10 @@ function DocentiTab({ aula, onUpdate }: any) {
           {aula.docentilezioni?.map((dl: any) => (
             <TableRow key={dl.id}>
               <TableCell className="font-medium">{dl.docente.cognome} {dl.docente.nome}</TableCell>
-              <TableCell>{Number(dl.oreEffettiveDocenza)}</TableCell>
-              <TableCell>€ {Number(dl.docente.tariffaOraria)}</TableCell>
-              <TableCell>€ {Number(dl.trasferAcosto)}</TableCell>
-              <TableCell className="font-semibold">
+              <TableCell className="font-data tabular-nums">{Number(dl.oreEffettiveDocenza)}</TableCell>
+              <TableCell className="font-data tabular-nums">€ {Number(dl.docente.tariffaOraria)}</TableCell>
+              <TableCell className="font-data tabular-nums">€ {Number(dl.trasferAcosto)}</TableCell>
+              <TableCell className="font-semibold font-data tabular-nums">
                 € {(Number(dl.oreEffettiveDocenza) * Number(dl.docente.tariffaOraria) + Number(dl.trasferAcosto)).toFixed(2)}
               </TableCell>
             </TableRow>
@@ -433,7 +440,7 @@ function ModulisticaTab({ aula }: any) {
             {archivio.map((a) => (
               <div key={a.id} className="flex justify-between items-center py-1 text-sm">
                 <span>{a.tipoDocumento}</span>
-                <a href={a.fileUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                <a href={`/api/aule/${aula.id}/archivio/${a.id}/download`} className="text-primary hover:underline">
                   Scarica
                 </a>
               </div>

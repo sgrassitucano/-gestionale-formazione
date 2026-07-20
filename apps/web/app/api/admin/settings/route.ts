@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { encrypt, decrypt } from "@gestionale/utils/encryption";
 import { z } from "zod";
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const settings = await db.systemSettings.findMany();
+  const settings = await withUserContext(user, (tx) => tx.systemSettings.findMany());
 
   // Mask values (don't send decrypted secrets to client, just show if set)
   const masked = settings.map((s) => ({
@@ -47,29 +47,33 @@ export async function PUT(request: NextRequest) {
 
     const valoreEncrypted = encrypt(valore);
 
-    const setting = await db.systemSettings.upsert({
-      where: { chiave },
-      create: {
-        chiave,
-        valoreEncrypted,
-        descrizione,
-        updatedBy: user.id,
-      },
-      update: {
-        valoreEncrypted,
-        descrizione,
-        updatedBy: user.id,
-      },
-    });
+    const setting = await withUserContext(user, async (tx) => {
+      const setting = await tx.systemSettings.upsert({
+        where: { chiave },
+        create: {
+          chiave,
+          valoreEncrypted,
+          descrizione,
+          updatedBy: user.id,
+        },
+        update: {
+          valoreEncrypted,
+          descrizione,
+          updatedBy: user.id,
+        },
+      });
 
-    await db.logAudit.create({
-      data: {
-        utenteId: user.id,
-        azione: "UPDATE_SETTING",
-        tabella: "SystemSettings",
-        recordId: setting.id,
-        dettagli: { chiave },
-      },
+      await tx.logAudit.create({
+        data: {
+          utenteId: user.id,
+          azione: "UPDATE_SETTING",
+          tabella: "SystemSettings",
+          recordId: setting.id,
+          dettagli: { chiave },
+        },
+      });
+
+      return setting;
     });
 
     return NextResponse.json({ success: true });

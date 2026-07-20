@@ -3,8 +3,8 @@ import { verifyJWT } from "./crypto";
 
 const JWT_SECRET = process.env.NEXT_PUBLIC_SESSION_SECRET || "dev-secret-change-me";
 
-export function verifyToken(token: string): SessionUser | null {
-  const payload = verifyJWT(token, JWT_SECRET);
+export async function verifyToken(token: string): Promise<SessionUser | null> {
+  const payload = await verifyJWT(token, JWT_SECRET);
   if (!payload) return null;
 
   return {

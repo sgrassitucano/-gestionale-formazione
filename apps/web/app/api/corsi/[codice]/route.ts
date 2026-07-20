@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -25,9 +25,11 @@ export async function GET(
       );
     }
 
-    const corso = await db.catalogoCorso.findUnique({
-      where: { codice: params.codice },
-    });
+    const corso = await withUserContext(user, (tx) =>
+      tx.catalogoCorso.findUnique({
+        where: { codice: params.codice },
+      })
+    );
 
     if (!corso || corso.deletedAt) {
       return NextResponse.json(
@@ -66,10 +68,12 @@ export async function PUT(
     const body = await request.json();
     const data = updateCorsoSchema.parse(body);
 
-    const corso = await db.catalogoCorso.update({
-      where: { codice: params.codice },
-      data,
-    });
+    const corso = await withUserContext(user, (tx) =>
+      tx.catalogoCorso.update({
+        where: { codice: params.codice },
+        data,
+      })
+    );
 
     return NextResponse.json({
       success: true,
@@ -105,10 +109,12 @@ export async function DELETE(
       );
     }
 
-    const corso = await db.catalogoCorso.update({
-      where: { codice: params.codice },
-      data: { deletedAt: new Date() },
-    });
+    const corso = await withUserContext(user, (tx) =>
+      tx.catalogoCorso.update({
+        where: { codice: params.codice },
+        data: { deletedAt: new Date() },
+      })
+    );
 
     return NextResponse.json({
       success: true,

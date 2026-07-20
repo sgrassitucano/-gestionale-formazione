@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { z } from "zod";
 
 const updateVoceSchema = z.object({
@@ -26,14 +26,16 @@ export async function PUT(
     const body = await request.json();
     const data = updateVoceSchema.parse(body);
 
-    const voce = await db.voceContabile.update({
-      where: { id: params.id },
-      data: {
-        ...data,
-        dataInizio: data.dataInizio ? new Date(data.dataInizio) : undefined,
-        dataFine: data.dataFine !== undefined ? (data.dataFine ? new Date(data.dataFine) : null) : undefined,
-      },
-    });
+    const voce = await withUserContext(user, (tx) =>
+      tx.voceContabile.update({
+        where: { id: params.id },
+        data: {
+          ...data,
+          dataInizio: data.dataInizio ? new Date(data.dataInizio) : undefined,
+          dataFine: data.dataFine !== undefined ? (data.dataFine ? new Date(data.dataFine) : null) : undefined,
+        },
+      })
+    );
 
     return NextResponse.json({ success: true, voce });
   } catch (error) {
@@ -54,7 +56,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.voceContabile.update({ where: { id: params.id }, data: { deletedAt: new Date() } });
+  await withUserContext(user, (tx) =>
+    tx.voceContabile.update({ where: { id: params.id }, data: { deletedAt: new Date() } })
+  );
 
   return NextResponse.json({ success: true });
 }

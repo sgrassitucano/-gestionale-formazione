@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { z } from "zod";
 
 const createVoceSchema = z.object({
@@ -17,10 +17,12 @@ export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const voci = await db.voceContabile.findMany({
-    where: { deletedAt: null },
-    orderBy: { dataInizio: "desc" },
-  });
+  const voci = await withUserContext(user, (tx) =>
+    tx.voceContabile.findMany({
+      where: { deletedAt: null },
+      orderBy: { dataInizio: "desc" },
+    })
+  );
 
   return NextResponse.json({ success: true, voci });
 }
@@ -35,18 +37,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createVoceSchema.parse(body);
 
-    const voce = await db.voceContabile.create({
-      data: {
-        descrizione: data.descrizione,
-        categoria: data.categoria,
-        tipo: data.tipo,
-        importo: data.importo,
-        dataInizio: new Date(data.dataInizio),
-        dataFine: data.dataFine ? new Date(data.dataFine) : null,
-        ricorrente: data.ricorrente,
-        creatoDay: user.id,
-      },
-    });
+    const voce = await withUserContext(user, (tx) =>
+      tx.voceContabile.create({
+        data: {
+          descrizione: data.descrizione,
+          categoria: data.categoria,
+          tipo: data.tipo,
+          importo: data.importo,
+          dataInizio: new Date(data.dataInizio),
+          dataFine: data.dataFine ? new Date(data.dataFine) : null,
+          ricorrente: data.ricorrente,
+          creatoDay: user.id,
+        },
+      })
+    );
 
     return NextResponse.json({ success: true, voce });
   } catch (error) {

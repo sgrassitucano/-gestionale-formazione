@@ -25,7 +25,8 @@ enum Ruolo {
 
 model ProfiloUtente {
   id                   String   @id @default(cuid())
-  email                String   @unique
+  email                String   // ENCRYPTED (cifrato a riposo)
+  emailHash            String   @unique // blind index HMAC di email normalizzata, usato per login/lookup
   passwordHash         String
   ruolo                Ruolo
   nome                 String?
@@ -112,7 +113,8 @@ model Discente {
   luogoNascita    String? // città di nascita
   provinciaNascita String?
   regioneNascita  String?
-  codiceFiscale   String   // ENCRYPTED, UNIQUE
+  codiceFiscale   String   // ENCRYPTED
+  codiceFiscaleHash String @unique // blind index HMAC di CF normalizzato, usato per lookup/import/matching
   email           String?  // ENCRYPTED
   cellulare       String?  // ENCRYPTED
   sesso           String? // M/F
@@ -131,10 +133,9 @@ model Discente {
 
   // Relazioni
   iscrizioni      IscrizioneAula[]
+  archivioDocumenti ArchivioAula[]
 
-  @@unique([codiceFiscale])
   @@index([aziendaId])
-  @@index([codiceFiscale])
   @@index([deletedAt])
 }
 
@@ -260,6 +261,7 @@ model Aula {
   iscrizioni      IscrizioneAula[]
   docentilezioni  DocenteLezione[]
   archivio        ArchivioAula[]
+  chiusura        ChiusuraAula?
 
   @@index([corsoCodec])
   @@index([stato])
@@ -420,22 +422,58 @@ model TemplateMapping {
 }
 
 model ArchivioAula {
-  id              String   @id @default(cuid())
-  aulaId          String
-  aula            Aula     @relation(fields: [aulaId], references: [id], onDelete: Cascade)
-  tipoDocumento   String   // "REGISTRO", "VERBALE", "TEST", "ATTESTATO", etc.
-  fileUrl         String   // Supabase Storage URL (privato)
-  mimeType        String
-  uploadDay       String   // user ID
-  uploadUtente    ProfiloUtente @relation("uploadedBy", fields: [uploadDay], references: [id], onDelete: Restrict)
-  dataUpload      DateTime @default(now())
-  createdAt       DateTime @default(now())
-  deletedAt       DateTime? // soft-delete (retention 10 anni)
+  id                  String   @id @default(cuid())
+  aulaId              String
+  aula                Aula     @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  tipoDocumento       String   // "REGISTRO", "RESOCONTO", "TEST_INTERMEDI", "TEST_FINALE", "GRADIMENTO",
+                                // "FASCICOLO", "EBAFOS", "PIATTAFORMA", "LISTA_CORSISTI",
+                                // "AUTODICHIARAZIONE", "ATTESTATO", "REPORT_QUESTIONARIO"
+  fase                FaseChiusuraDocumento @default(DOCUMENTI) // in quale fase del flow di chiusura è stato caricato
+  discenteId          String?  // null per documenti a livello aula (Registro, EBAFOS, Autodichiarazione, ecc.)
+  discente            Discente? @relation(fields: [discenteId], references: [id], onDelete: SetNull)
+  fileUrl             String   // Supabase Storage URL (privato)
+  mimeType            String
+  metodoClassificazione String? // "OCR", "CF_MATCH", "MANUALE", null se non applicabile (upload aula-level)
+  confidenza          Decimal? @db.Decimal(4, 3) // 0.000-1.000, solo per classificazione OCR
+  uploadDay           String   // user ID
+  uploadUtente        ProfiloUtente @relation("uploadedBy", fields: [uploadDay], references: [id], onDelete: Restrict)
+  dataUpload          DateTime @default(now())
+  createdAt           DateTime @default(now())
+  deletedAt           DateTime? // soft-delete (retention 10 anni)
 
   @@index([aulaId])
   @@index([tipoDocumento])
+  @@index([discenteId])
+  @@index([fase])
   @@index([uploadDay])
   @@index([deletedAt])
+}
+
+enum FaseChiusuraDocumento {
+  DOCUMENTI // registro/resoconto/test/questionario/fascicolo/caricamenti iniziali
+  ATTESTATI // fase 2, sblocca il countdown
+}
+
+enum FaseChiusuraAula {
+  DOCUMENTI          // aula CONCLUSA, upload documenti in corso, countdown non ancora avviato
+  ATTESA_ATTESTATI   // documenti confermati, in attesa upload attestati
+  COUNTDOWN          // attestati caricati, countdown eliminazione avviato
+  COMPLETATA         // countdown scaduto, upload temporanei cancellati, archivio finale conservato
+}
+
+model ChiusuraAula {
+  id                      String   @id @default(cuid())
+  aulaId                  String   @unique
+  aula                    Aula     @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  fase                    FaseChiusuraAula @default(DOCUMENTI)
+  countdownAvviatoAt      DateTime? // timestamp inizio countdown (set al passaggio a COUNTDOWN)
+  dataEliminazionePrevista DateTime? // countdownAvviatoAt + 7 giorni, letta dal cron Vercel
+  confermatoDay           String?   // user ID che ha confermato chiusura fase documenti
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([fase])
+  @@index([dataEliminazionePrevista])
 }
 
 // ============================================================================

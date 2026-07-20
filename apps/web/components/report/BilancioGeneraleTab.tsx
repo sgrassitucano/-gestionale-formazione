@@ -198,7 +198,7 @@ export function BilancioGeneraleTab() {
                   <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.descrizione}</TableCell>
                     <TableCell>{v.categoria}</TableCell>
-                    <TableCell><Badge variant={v.tipo === "ENTRATA" ? "success" : "destructive"}>{v.tipo}</Badge></TableCell>
+                    <TableCell><Badge variant={v.tipo === "ENTRATA" ? "success" : "destructive"} dot>{v.tipo}</Badge></TableCell>
                     <TableCell>€ {v.importoMensile.toFixed(2)} {v.ricorrente && <span className="text-xs text-muted-foreground">(ricorrente)</span>}</TableCell>
                     <TableCell>{v.mesiConteggiati}</TableCell>
                     <TableCell className="font-semibold">€ {v.importoTotale.toFixed(2)}</TableCell>

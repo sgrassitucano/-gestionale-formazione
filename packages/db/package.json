@@ -6,6 +6,7 @@
   "main": "src/client.ts",
   "exports": {
     ".": "./src/client.ts",
+    "./context": "./src/context.ts",
     "./seed": "./src/seeds/seed.ts"
   },
   "scripts": {

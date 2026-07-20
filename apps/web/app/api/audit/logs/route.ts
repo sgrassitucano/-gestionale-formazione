@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
@@ -23,24 +23,26 @@ export async function GET(request: NextRequest) {
     if (utenteId) where.utenteId = utenteId;
     if (azione) where.azione = { contains: azione };
 
-    const [logs, total] = await Promise.all([
-      db.logAudit.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        skip: offset,
-        include: {
-          utente: {
-            select: {
-              email: true,
-              nome: true,
-              cognome: true,
+    const [logs, total] = await withUserContext(user, (tx) =>
+      Promise.all([
+        tx.logAudit.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+          include: {
+            utente: {
+              select: {
+                email: true,
+                nome: true,
+                cognome: true,
+              },
             },
           },
-        },
-      }),
-      db.logAudit.count({ where }),
-    ]);
+        }),
+        tx.logAudit.count({ where }),
+      ])
+    );
 
     return NextResponse.json({
       success: true,

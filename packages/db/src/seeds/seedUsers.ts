@@ -1,7 +1,7 @@
-import { PrismaClient, Ruolo } from "@prisma/client";
+import { Ruolo } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { db as prisma } from "../client";
+import { blindIndex } from "@gestionale/utils/encryption";
 
 const USERS: { email: string; password: string; ruolo: Ruolo; nome: string; cognome: string }[] = [
   { email: "s.grassi@iltucano.net", password: "Sr181016?!", ruolo: Ruolo.SUPERADMIN, nome: "Stefano", cognome: "Grassi" },
@@ -17,7 +17,7 @@ async function main() {
   for (const u of USERS) {
     const passwordHash = await bcrypt.hash(u.password, 10);
     await prisma.profiloUtente.upsert({
-      where: { email: u.email },
+      where: { emailHash: blindIndex(u.email) },
       create: {
         email: u.email,
         passwordHash,

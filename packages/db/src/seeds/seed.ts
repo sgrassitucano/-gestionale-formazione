@@ -1,7 +1,7 @@
-import { PrismaClient, Ruolo } from "@prisma/client";
+import { Ruolo } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { db as prisma } from "../client"; // client condiviso: serve il middleware di encryption attivo
+import { blindIndex } from "@gestionale/utils/encryption";
 
 async function main() {
   console.log("Seeding database...");
@@ -9,7 +9,7 @@ async function main() {
   try {
     // Create superadmin user
     const adminExists = await prisma.profiloUtente.findUnique({
-      where: { email: "admin@example.com" },
+      where: { emailHash: blindIndex("admin@example.com") },
     });
 
     if (!adminExists) {

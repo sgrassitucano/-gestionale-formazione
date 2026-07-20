@@ -2,69 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Design System 2026 — palette "cantiere/sicurezza": arancio segnale come
+  accento primario, grigio cemento come base, verde/ambra/rosso semantici
+  separati dall'accento. Vedi bozza approvata (artifact design-system-2026).
+*/
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    color-scheme: light;
+    --background: 48 11% 94%;
+    --foreground: 220 12% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 12% 10%;
 
-    --primary: 199 89% 30%;
+    --primary: 19 84% 47%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 94%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 168 30% 92%;
+    --secondary-foreground: 168 45% 20%;
 
-    --accent: 25 95% 53%;
+    --accent: 168 76% 24%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 48 8% 90%;
+    --muted-foreground: 210 12% 40%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 3 51% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 35%;
+    --success: 152 63% 33%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 41 100% 39%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 214 20% 88%;
-    --input: 214 20% 88%;
-    --ring: 199 89% 30%;
+    --border: 48 9% 84%;
+    --input: 48 9% 84%;
+    --ring: 19 84% 47%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
 
-    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-sans: "Segoe UI", "Helvetica Neue", Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: "Bahnschrift", "Arial Narrow", "Segoe UI Semibold", var(--font-sans);
+    --font-data: "Consolas", "SFMono-Regular", "Cascadia Mono", ui-monospace, monospace;
   }
 
-  .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 20% 96%;
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --background: 220 7% 11%;
+    --foreground: 48 17% 92%;
 
-    --card: 222 40% 11%;
-    --card-foreground: 210 20% 96%;
+    --card: 216 6% 14%;
+    --card-foreground: 48 17% 92%;
 
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 8%;
+    --primary: 19 100% 63%;
+    --primary-foreground: 220 12% 10%;
 
-    --secondary: 222 30% 16%;
-    --secondary-foreground: 210 20% 96%;
+    --secondary: 168 20% 16%;
+    --secondary-foreground: 168 40% 80%;
 
-    --accent: 25 95% 53%;
-    --accent-foreground: 222 47% 8%;
+    --accent: 168 48% 49%;
+    --accent-foreground: 220 12% 10%;
 
-    --muted: 222 30% 16%;
-    --muted-foreground: 215 16% 65%;
+    --muted: 216 7% 18%;
+    --muted-foreground: 206 7% 63%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 3 63% 68%;
+    --destructive-foreground: 220 12% 10%;
 
-    --border: 222 25% 20%;
-    --input: 222 25% 20%;
-    --ring: 199 89% 48%;
+    --success: 152 40% 52%;
+    --success-foreground: 220 12% 10%;
+
+    --warning: 41 72% 58%;
+    --warning-foreground: 220 12% 10%;
+
+    --border: 216 7% 22%;
+    --input: 216 7% 22%;
+    --ring: 19 100% 63%;
   }
 }
 
@@ -76,6 +91,11 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-stretch: condensed;
+    letter-spacing: -0.01em;
   }
 }
 

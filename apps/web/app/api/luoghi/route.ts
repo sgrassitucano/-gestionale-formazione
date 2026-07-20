@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
+import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { z } from "zod";
 
@@ -15,10 +15,12 @@ export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const luoghi = await db.luogo.findMany({
-    where: { deletedAt: null },
-    orderBy: { nome: "asc" },
-  });
+  const luoghi = await withUserContext(user, (tx) =>
+    tx.luogo.findMany({
+      where: { deletedAt: null },
+      orderBy: { nome: "asc" },
+    })
+  );
 
   return NextResponse.json({ success: true, luoghi });
 }
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = createLuogoSchema.parse(body);
 
-    const luogo = await db.luogo.create({ data });
+    const luogo = await withUserContext(user, (tx) => tx.luogo.create({ data }));
 
     return NextResponse.json({ success: true, luogo });
   } catch (error) {

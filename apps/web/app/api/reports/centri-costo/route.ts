@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
 import { calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
 import { exportToXlsx } from "@gestionale/utils/xlsx-exporter";
@@ -18,20 +18,22 @@ export async function GET(request: NextRequest) {
   const mese = searchParams.get("mese");
   const format = searchParams.get("format");
 
-  const where: any = { deletedAt: null };
+  const where: any = { deletedAt: null, stato: "CONCLUSA" };
   if (mese) {
     const { start, end } = monthRange(mese);
     where.dataInizio = { gte: start, lte: end };
   }
 
-  const aule = await db.aula.findMany({
-    where,
-    include: {
-      corso: true,
-      iscrizioni: { where: { deletedAt: null } },
-      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-    },
-  });
+  const aule = await withUserContext(user, (tx) =>
+    tx.aula.findMany({
+      where,
+      include: {
+        corso: true,
+        iscrizioni: { where: { deletedAt: null } },
+        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+      },
+    })
+  );
 
   const report: Array<{
     aulaId: string;

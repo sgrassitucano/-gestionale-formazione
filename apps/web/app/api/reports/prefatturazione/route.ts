@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@gestionale/db";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { withUserContext } from "@gestionale/db/context";
 import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
 import { exportToXlsx } from "@gestionale/utils/xlsx-exporter";
 
@@ -19,22 +19,24 @@ export async function GET(request: NextRequest) {
   const corsoCodec = searchParams.get("corso");
   const format = searchParams.get("format");
 
-  const where: any = { deletedAt: null };
+  const where: any = { deletedAt: null, stato: "CONCLUSA" };
   if (mese) {
     const { start, end } = monthRange(mese);
     where.dataInizio = { gte: start, lte: end };
   }
   if (corsoCodec) where.corsoCodec = corsoCodec;
 
-  const aule = await db.aula.findMany({
-    where,
-    include: {
-      corso: { include: { listiniPrezzi: true } },
-      iscrizioni: { where: { deletedAt: null } },
-      docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
-    },
-    orderBy: { dataInizio: "desc" },
-  });
+  const aule = await withUserContext(user, (tx) =>
+    tx.aula.findMany({
+      where,
+      include: {
+        corso: { include: { listiniPrezzi: true } },
+        iscrizioni: { where: { deletedAt: null } },
+        docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+      },
+      orderBy: { dataInizio: "desc" },
+    })
+  );
 
   const report = aule.map((a) => {
     const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
