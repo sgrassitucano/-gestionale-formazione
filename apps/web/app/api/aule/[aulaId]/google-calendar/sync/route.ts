@@ -111,6 +111,18 @@ export async function POST(
           errors.push(`Scadenza aula: ${err.message}`);
         }
 
+        if (failedCount > 0) {
+          await tx.logAudit.create({
+            data: {
+              utenteId: user.id,
+              azione: "GCAL_SYNC_FALLITO",
+              tabella: "Aula",
+              recordId: aula.id,
+              dettagli: { syncedCount, failedCount, errors },
+            },
+          });
+        }
+
         return { status: 200 as const, body: { success: true, syncedCount, failedCount, errors } };
       }
 
@@ -158,6 +170,22 @@ export async function POST(
           failedCount++;
           errors.push(`Lezione ${lezione.id}: ${err.message}`);
         }
+      }
+
+      // Senza questo, un fallimento per-lezione finiva solo nell'array errors
+      // della risposta HTTP: se il client non lo ispezionava (o la richiesta
+      // andava in timeout prima che la risposta arrivasse), DB e Google
+      // Calendar restavano disallineati per sempre senza nessuna traccia.
+      if (failedCount > 0) {
+        await tx.logAudit.create({
+          data: {
+            utenteId: user.id,
+            azione: "GCAL_SYNC_FALLITO",
+            tabella: "Aula",
+            recordId: aula.id,
+            dettagli: { syncedCount, failedCount, errors },
+          },
+        });
       }
 
       return { status: 200 as const, body: { success: true, syncedCount, failedCount, errors } };

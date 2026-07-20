@@ -78,6 +78,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, errors: validationResult.errors }, { status: 400 });
     }
 
+    // Limite massimo discenti per aula (vedi automazione_formazione_launcher,
+    // che normalmente splitta un caricamento massivo in più aule prima di
+    // arrivare qui). Questo endpoint di creazione manuale non aveva nessun
+    // limite: un XLSX con più di 35 righe creava un'aula sovraffollata.
+    const MAX_DISCENTI_PER_AULA = 35;
+    if (validationResult.valid.length > MAX_DISCENTI_PER_AULA) {
+      return NextResponse.json(
+        {
+          success: false,
+          errors: [`Troppi discenti (${validationResult.valid.length}): massimo ${MAX_DISCENTI_PER_AULA} per aula, splittare in più caricamenti`],
+        },
+        { status: 400 }
+      );
+    }
+
     const aula = await withUserContext(user, async (tx) => {
       const newAula = await tx.aula.create({
         data: {
@@ -94,9 +109,14 @@ export async function POST(request: NextRequest) {
       for (const discente of validationResult.valid) {
         const rowIdx = validationResult.valid.indexOf(discente);
         const rowData = parseResult.rows[rowIdx];
-        const aziendaNome = rowData.azienda || "Default";
+        const aziendaNome = (rowData.azienda || "Default").trim();
 
-        let azienda = await tx.azienda.findFirst({ where: { ragioneSociale: aziendaNome, deletedAt: null } });
+        // Match case/spazi-insensitive: senza, "ACME Srl" e "ACME srl "
+        // finivano su due righe Azienda distinte invece di essere unite,
+        // frammentando i Centri Costo per la stessa azienda reale.
+        let azienda = await tx.azienda.findFirst({
+          where: { ragioneSociale: { equals: aziendaNome, mode: "insensitive" }, deletedAt: null },
+        });
         if (!azienda) {
           azienda = await tx.azienda.create({
             data: { ragioneSociale: aziendaNome, pIva: "UNKNOWN", codiceFiscale: "UNKNOWN" },

@@ -111,23 +111,39 @@ export async function POST(
 
       const JSZip = (await import("jszip")).default;
       const zip = new JSZip();
+      // Isolamento per-discente: un record malformato (es. placeholder
+      // mancante, mismatch template) prima abortiva l'intera richiesta con
+      // un 500, bloccando la generazione per TUTTA l'aula per colpa di un
+      // solo discente. Ora si salta il singolo fallito e si prosegue con
+      // gli altri, elencando i fallimenti in un manifest dentro lo zip.
+      const fallimenti: string[] = [];
 
       for (const iscrizione of aula.iscrizioni) {
-        const context = { ...baseContext, discente: iscrizione.discente };
-        const data = resolveFieldMappings(
-          template.campi.map((c) => ({ nomeCampo: c.nomeCampo, sorgenteDato: c.sorgenteDato })),
-          context
-        );
-
         const nomeFile = `${iscrizione.discente.cognome}_${iscrizione.discente.nome}`.replace(/\s+/g, "_");
+        try {
+          const context = { ...baseContext, discente: iscrizione.discente };
+          const data = resolveFieldMappings(
+            template.campi.map((c) => ({ nomeCampo: c.nomeCampo, sorgenteDato: c.sorgenteDato })),
+            context
+          );
 
-        if (isDocx) {
-          const buf = await generateDocxFromTemplate(templateBuffer, data);
-          zip.file(`${template.nome}_${nomeFile}.docx`, buf);
-        } else {
-          const html = await generateHtmlFromTemplate(templateBuffer.toString("utf-8"), data);
-          zip.file(`${template.nome}_${nomeFile}.html`, html);
+          if (isDocx) {
+            const buf = await generateDocxFromTemplate(templateBuffer, data);
+            zip.file(`${template.nome}_${nomeFile}.docx`, buf);
+          } else {
+            const html = await generateHtmlFromTemplate(templateBuffer.toString("utf-8"), data);
+            zip.file(`${template.nome}_${nomeFile}.html`, html);
+          }
+        } catch (err: any) {
+          fallimenti.push(`${nomeFile}: ${err.message}`);
         }
+      }
+
+      if (fallimenti.length > 0) {
+        zip.file("_ERRORI_GENERAZIONE.txt", fallimenti.join("\n"));
+      }
+      if (fallimenti.length === aula.iscrizioni.length) {
+        return NextResponse.json({ error: "Generazione fallita per tutti i discenti", dettagli: fallimenti }, { status: 500 });
       }
 
       const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
@@ -135,6 +151,7 @@ export async function POST(
         headers: {
           "Content-Type": "application/zip",
           "Content-Disposition": `attachment; filename="${template.nome}_${aula.id}.zip"`,
+          "X-Generazione-Fallimenti": String(fallimenti.length),
         },
       });
     }
