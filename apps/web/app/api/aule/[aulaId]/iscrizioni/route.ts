@@ -40,8 +40,18 @@ export async function POST(
     const body = await request.json();
     const data = addIscrizioneSchema.parse(body);
 
-    const iscrizione = await withUserContext(user, (tx) =>
-      tx.iscrizioneAula.create({
+    const result = await withUserContext(user, async (tx) => {
+      const aula = await tx.aula.findUnique({ where: { id: params.aulaId } });
+      if (!aula || aula.deletedAt) {
+        return { status: 404 as const, body: { error: "Aula non trovata" } };
+      }
+      // Aula conclusa: la lista discenti è definitiva, non più modificabile
+      // (i report Mod.5/6/7 la calcolano dal conteggio iscrizioni corrente).
+      if (aula.stato === "CONCLUSA") {
+        return { status: 409 as const, body: { error: "Aula conclusa: elenco discenti non più modificabile" } };
+      }
+
+      const iscrizione = await tx.iscrizioneAula.create({
         data: {
           aulaId: params.aulaId,
           discenteId: data.discenteId,
@@ -50,10 +60,12 @@ export async function POST(
           responsabile: data.responsabile,
         },
         include: { discente: true },
-      })
-    );
+      });
 
-    return NextResponse.json({ success: true, iscrizione });
+      return { status: 200 as const, body: { success: true, iscrizione } };
+    });
+
+    return NextResponse.json(result.body, { status: result.status });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -78,12 +90,22 @@ export async function DELETE(
     return NextResponse.json({ error: "discenteId required" }, { status: 400 });
   }
 
-  await withUserContext(user, (tx) =>
-    tx.iscrizioneAula.updateMany({
+  const result = await withUserContext(user, async (tx) => {
+    const aula = await tx.aula.findUnique({ where: { id: params.aulaId } });
+    if (!aula || aula.deletedAt) {
+      return { status: 404 as const, body: { error: "Aula non trovata" } };
+    }
+    if (aula.stato === "CONCLUSA") {
+      return { status: 409 as const, body: { error: "Aula conclusa: elenco discenti non più modificabile" } };
+    }
+
+    await tx.iscrizioneAula.updateMany({
       where: { aulaId: params.aulaId, discenteId },
       data: { deletedAt: new Date() },
-    })
-  );
+    });
 
-  return NextResponse.json({ success: true });
+    return { status: 200 as const, body: { success: true } };
+  });
+
+  return NextResponse.json(result.body, { status: result.status });
 }

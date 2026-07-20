@@ -46,8 +46,12 @@ export async function POST(
           include: {
             corso: true,
             luogo: true,
-            iscrizioni: { include: { discente: true } },
-            docentilezioni: { include: { docente: true } },
+            // deletedAt: null — senza, un discente ritirato (iscrizione
+            // soft-eliminata) riceveva comunque attestato/registro generato.
+            // orderBy stabile: PER_AULA_SEMPLICE usa iscrizioni[0], senza
+            // ordinamento esplicito l'ordine non è garantito da Postgres.
+            iscrizioni: { where: { deletedAt: null }, include: { discente: true }, orderBy: { createdAt: "asc" } },
+            docentilezioni: { where: { deletedAt: null }, include: { docente: true } },
           },
         }),
       ])

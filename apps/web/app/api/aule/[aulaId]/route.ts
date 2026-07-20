@@ -31,6 +31,17 @@ export async function GET(
   return NextResponse.json({ success: true, aula });
 }
 
+// Transizioni valide della state machine (Pianificata -> In Corso -> Conclusa,
+// vedi CLAUDE.md). Nessun salto, nessun ritorno indietro: una volta Conclusa
+// l'aula è definitiva (i report Mod.5/6/7 la considerano chiusa e la
+// includono nei calcoli filtrando stato: CONCLUSA — riportarla indietro la
+// farebbe silenziosamente sparire da quei report senza errore).
+const TRANSIZIONI_VALIDE: Record<string, string[]> = {
+  PIANIFICATA: ["IN_CORSO"],
+  IN_CORSO: ["CONCLUSA"],
+  CONCLUSA: [],
+};
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { aulaId: string } }
@@ -42,19 +53,54 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const allowedFields = ["luogoId", "stato", "dataInizio", "dataFine"];
-    const data: any = {};
-    for (const key of allowedFields) {
-      if (body[key] !== undefined) {
-        data[key] = key.includes("data") && body[key] ? new Date(body[key]) : body[key];
+
+    const aula = await withUserContext(user, async (tx) => {
+      const existing = await tx.aula.findUnique({ where: { id: params.aulaId } });
+      if (!existing || existing.deletedAt) {
+        return { status: 404 as const, body: { error: "Aula non trovata" } };
       }
-    }
 
-    const aula = await withUserContext(user, (tx) =>
-      tx.aula.update({ where: { id: params.aulaId }, data })
-    );
+      if (existing.stato === "CONCLUSA") {
+        return {
+          status: 409 as const,
+          body: { error: "Aula conclusa: non è più modificabile (luogo, date, stato)" },
+        };
+      }
 
-    return NextResponse.json({ success: true, aula });
+      const allowedFields = ["luogoId", "stato", "dataInizio", "dataFine"];
+      const data: any = {};
+      for (const key of allowedFields) {
+        if (body[key] !== undefined) {
+          data[key] = key.includes("data") && body[key] ? new Date(body[key]) : body[key];
+        }
+      }
+
+      if (data.stato !== undefined && data.stato !== existing.stato) {
+        const permesse = TRANSIZIONI_VALIDE[existing.stato] ?? [];
+        if (!permesse.includes(data.stato)) {
+          return {
+            status: 409 as const,
+            body: { error: `Transizione di stato non valida: ${existing.stato} -> ${data.stato}` },
+          };
+        }
+      }
+
+      const updated = await tx.aula.update({ where: { id: params.aulaId }, data });
+
+      await tx.logAudit.create({
+        data: {
+          utenteId: user.id,
+          azione: "AGGIORNA_AULA",
+          tabella: "Aula",
+          recordId: params.aulaId,
+          dettagli: { campiModificati: Object.keys(data), statoPrecedente: existing.stato },
+        },
+      });
+
+      return { status: 200 as const, body: { success: true, aula: updated } };
+    });
+
+    return NextResponse.json(aula.body, { status: aula.status });
   } catch (error) {
     console.error("Update aula error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

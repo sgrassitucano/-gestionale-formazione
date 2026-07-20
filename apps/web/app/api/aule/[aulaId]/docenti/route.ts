@@ -22,8 +22,16 @@ export async function POST(
     const body = await request.json();
     const data = assignDocenteSchema.parse(body);
 
-    const docenteLezione = await withUserContext(user, (tx) =>
-      tx.docenteLezione.create({
+    const result = await withUserContext(user, async (tx) => {
+      const aula = await tx.aula.findUnique({ where: { id: params.aulaId } });
+      if (!aula || aula.deletedAt) {
+        return { status: 404 as const, body: { error: "Aula non trovata" } };
+      }
+      if (aula.stato === "CONCLUSA") {
+        return { status: 409 as const, body: { error: "Aula conclusa: assegnazione docenti non più modificabile" } };
+      }
+
+      const docenteLezione = await tx.docenteLezione.create({
         data: {
           aulaId: params.aulaId,
           docenteId: data.docenteId,
@@ -31,10 +39,12 @@ export async function POST(
           trasferAcosto: data.trasferAcosto,
         },
         include: { docente: true },
-      })
-    );
+      });
 
-    return NextResponse.json({ success: true, docenteLezione });
+      return { status: 200 as const, body: { success: true, docenteLezione } };
+    });
+
+    return NextResponse.json(result.body, { status: result.status });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -59,13 +69,28 @@ export async function DELETE(
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  // Soft-delete with substitution history: set dataFine
-  await withUserContext(user, (tx) =>
-    tx.docenteLezione.update({
+  const result = await withUserContext(user, async (tx) => {
+    const aula = await tx.aula.findUnique({ where: { id: params.aulaId } });
+    if (!aula || aula.deletedAt) {
+      return { status: 404 as const, body: { error: "Aula non trovata" } };
+    }
+    if (aula.stato === "CONCLUSA") {
+      return { status: 409 as const, body: { error: "Aula conclusa: assegnazione docenti non più modificabile" } };
+    }
+
+    const docenteLezione = await tx.docenteLezione.findUnique({ where: { id: docenteLezioneId } });
+    if (!docenteLezione || docenteLezione.aulaId !== params.aulaId) {
+      return { status: 404 as const, body: { error: "Assegnazione non trovata per questa aula" } };
+    }
+
+    // Soft-delete with substitution history: set dataFine
+    await tx.docenteLezione.update({
       where: { id: docenteLezioneId },
       data: { dataFine: new Date() },
-    })
-  );
+    });
 
-  return NextResponse.json({ success: true });
+    return { status: 200 as const, body: { success: true } };
+  });
+
+  return NextResponse.json(result.body, { status: result.status });
 }
