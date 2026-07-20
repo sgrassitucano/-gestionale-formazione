@@ -13,13 +13,8 @@ const PREVIEW_USER = {
 
 export async function middleware(request: NextRequest) {
   if (PREVIEW_MODE) {
-    const response = NextResponse.next();
-    response.headers.set("x-user-id", PREVIEW_USER.id);
-    response.headers.set("x-user-email", PREVIEW_USER.email);
-    response.headers.set("x-user-role", PREVIEW_USER.ruolo);
-    response.headers.set("x-user-name", PREVIEW_USER.nome);
-    response.headers.set("x-user-surname", PREVIEW_USER.cognome);
-    return response;
+    const requestHeaders = buildUserHeaders(request, PREVIEW_USER);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const pathname = request.nextUrl.pathname;
@@ -58,15 +53,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Token valid → attach user to request headers
-  const response = NextResponse.next();
-  response.headers.set("x-user-id", user.id);
-  response.headers.set("x-user-email", user.email);
-  response.headers.set("x-user-role", user.ruolo);
-  if (user.nome) response.headers.set("x-user-name", user.nome);
-  if (user.cognome) response.headers.set("x-user-surname", user.cognome);
+  // Token valid → attach user alla request forwardata all'handler (non alla
+  // response al client: NextResponse.next() da sola non basta, serve
+  // l'override { request: { headers } } — altrimenti l'handler legge gli
+  // header ORIGINALI del client, forgeabili da chiunque mandi
+  // "x-user-role: SUPERADMIN" a mano, bypassando login/RLS interamente).
+  const requestHeaders = buildUserHeaders(request, user);
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
 
-  return response;
+function buildUserHeaders(
+  request: NextRequest,
+  user: { id: string; email: string; ruolo: string; nome?: string | null; cognome?: string | null }
+): Headers {
+  // Riparte sempre dagli header originali del client, ma SOVRASCRIVE i
+  // campi x-user-* — non fidarsi di eventuali x-user-* già presenti nella
+  // request in ingresso (altrimenti il forgery resterebbe possibile lo
+  // stesso se il client li avesse già impostati prima che arrivassero qui).
+  const headers = new Headers(request.headers);
+  headers.set("x-user-id", user.id);
+  headers.set("x-user-email", user.email);
+  headers.set("x-user-role", user.ruolo);
+  if (user.nome) headers.set("x-user-name", user.nome);
+  else headers.delete("x-user-name");
+  if (user.cognome) headers.set("x-user-surname", user.cognome);
+  else headers.delete("x-user-surname");
+  return headers;
 }
 
 export const config = {
