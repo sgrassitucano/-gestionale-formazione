@@ -17,8 +17,20 @@ import path from "path";
 // (verificato: bug reale, non solo teorico). Gli scan cartacei veri (immagine
 // pura) non ne hanno bisogno, ma costa nulla ed evita pagine vuote silenziose
 // per qualunque PDF misto (testo vettoriale + immagine).
+// eval("require") invece di require diretto: senza questo, Next.js sostituisce
+// require.resolve con un id numerico di modulo interno al bundle invece del
+// path reale su disco (bug verificato: "path" argument must be of type
+// string, received type number — crashava "Collecting page data" in build),
+// perché webpack analizza staticamente require.resolve anche se il pacchetto
+// target è in serverComponentsExternalPackages (quello esclude pdfjs-dist dal
+// bundling, non la chiamata require.resolve dentro questo modulo, comunque
+// transpilato da webpack in quanto parte di @gestionale/utils). Il commento
+// /* webpackIgnore: true */ non è supportato su require.resolve, solo su
+// import()/require() diretti — eval nasconde la stringa dall'analisi statica.
+// eslint-disable-next-line @typescript-eslint/no-implied-eval
+const nodeRequire: NodeRequire = eval("require");
 const STANDARD_FONT_DATA_URL =
-  path.join(require.resolve("pdfjs-dist/package.json"), "..", "standard_fonts") + path.sep;
+  path.join(nodeRequire.resolve("pdfjs-dist/package.json"), "..", "standard_fonts") + path.sep;
 
 export type MetodoLettura = "NATIVO" | "OCR";
 
