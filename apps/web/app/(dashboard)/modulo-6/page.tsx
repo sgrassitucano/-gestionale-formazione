@@ -130,11 +130,11 @@ function BilancioTab() {
           {report.map((r) => (
             <TableRow key={r.aulaId}>
               <TableCell className="font-medium">{r.corso}</TableCell>
-              <TableCell>{r.discentiCount}</TableCell>
-              <TableCell className="text-success">€ {r.ricavo.toFixed(2)}</TableCell>
-              <TableCell className="text-destructive">€ {r.costo.toFixed(2)}</TableCell>
-              <TableCell className="font-semibold">€ {r.margine.toFixed(2)}</TableCell>
-              <TableCell>{r.marginePct.toFixed(1)}%</TableCell>
+              <TableCell className="font-data tabular-nums">{r.discentiCount}</TableCell>
+              <TableCell className="text-success font-data tabular-nums">€ {r.ricavo.toFixed(2)}</TableCell>
+              <TableCell className="text-destructive font-data tabular-nums">€ {r.costo.toFixed(2)}</TableCell>
+              <TableCell className="font-semibold font-data tabular-nums">€ {r.margine.toFixed(2)}</TableCell>
+              <TableCell className="font-data tabular-nums">{r.marginePct.toFixed(1)}%</TableCell>
               <TableCell>{r.dataInizio ? new Date(r.dataInizio).toLocaleDateString("it-IT") : "-"}</TableCell>
             </TableRow>
           ))}

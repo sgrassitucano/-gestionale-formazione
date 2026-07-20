@@ -160,8 +160,8 @@ export default function LuoghiPage() {
                 <>
                   <TableCell className="font-medium">{l.nome}</TableCell>
                   <TableCell>{l.citta || "-"}</TableCell>
-                  <TableCell>{l.costoMezzaGiornata != null ? `€ ${Number(l.costoMezzaGiornata).toFixed(2)}` : "-"}</TableCell>
-                  <TableCell>{l.costoGiornataIntera != null ? `€ ${Number(l.costoGiornataIntera).toFixed(2)}` : "-"}</TableCell>
+                  <TableCell className="font-data tabular-nums">{l.costoMezzaGiornata != null ? `€ ${Number(l.costoMezzaGiornata).toFixed(2)}` : "-"}</TableCell>
+                  <TableCell className="font-data tabular-nums">{l.costoGiornataIntera != null ? `€ ${Number(l.costoGiornataIntera).toFixed(2)}` : "-"}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>

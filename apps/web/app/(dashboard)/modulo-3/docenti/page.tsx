@@ -92,7 +92,7 @@ export default function DocentiPage() {
             <TableRow key={d.id}>
               <TableCell className="font-medium">{d.cognome} {d.nome}</TableCell>
               <TableCell>{d.email}</TableCell>
-              <TableCell>€ {Number(d.tariffaOraria).toFixed(2)}</TableCell>
+              <TableCell className="font-data tabular-nums">€ {Number(d.tariffaOraria).toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

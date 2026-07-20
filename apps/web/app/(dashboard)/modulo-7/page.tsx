@@ -94,7 +94,7 @@ export default function Modulo7Page() {
                   onClick={() => setExpandedCantiere(expandedCantiere === c.cantiere ? null : c.cantiere)}
                 >
                   <TableCell className="font-semibold">{c.cantiere}</TableCell>
-                  <TableCell>€ {c.totale.toFixed(2)}</TableCell>
+                  <TableCell className="font-data tabular-nums">€ {c.totale.toFixed(2)}</TableCell>
                   <TableCell className="text-primary flex items-center gap-1 text-sm">
                     {expandedCantiere === c.cantiere ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     Dettaglio
@@ -106,7 +106,7 @@ export default function Modulo7Page() {
                       <TableCell className="pl-10 text-muted-foreground text-sm">
                         {sub.nome} {sub.responsabile ? `(Resp: ${sub.responsabile})` : ""}
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">€ {sub.totale.toFixed(2)}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm font-data tabular-nums">€ {sub.totale.toFixed(2)}</TableCell>
                       <TableCell></TableCell>
                     </TableRow>
                   ))}

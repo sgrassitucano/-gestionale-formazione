@@ -118,7 +118,7 @@ export default function RicercaPage() {
                     <TableCell>{MODALITA_LABELS[i.aula.modalita] || i.aula.modalita}</TableCell>
                     <TableCell>{i.aula.luogo?.nome ?? "-"}</TableCell>
                     <TableCell>{fmtData(i.aula.dataInizio)}</TableCell>
-                    <TableCell><Badge variant="secondary">{i.aula.stato}</Badge></TableCell>
+                    <TableCell><Badge variant="secondary" dot>{i.aula.stato}</Badge></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -159,9 +159,9 @@ export default function RicercaPage() {
                       <TableCell className="font-medium">{dl.aula.corso?.titolo}</TableCell>
                       <TableCell>{dl.aula.luogo?.nome ?? "-"}</TableCell>
                       <TableCell>{fmtData(dl.aula.dataInizio)}</TableCell>
-                      <TableCell>{Number(dl.oreEffettiveDocenza)}h</TableCell>
-                      <TableCell>€ {Number(dl.trasferAcosto).toFixed(2)}</TableCell>
-                      <TableCell>€ {(Number(dl.oreEffettiveDocenza) * Number(doc.tariffaOraria) + Number(dl.trasferAcosto)).toFixed(2)}</TableCell>
+                      <TableCell className="font-data tabular-nums">{Number(dl.oreEffettiveDocenza)}h</TableCell>
+                      <TableCell className="font-data tabular-nums">€ {Number(dl.trasferAcosto).toFixed(2)}</TableCell>
+                      <TableCell className="font-data tabular-nums">€ {(Number(dl.oreEffettiveDocenza) * Number(doc.tariffaOraria) + Number(dl.trasferAcosto)).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -199,10 +199,10 @@ export default function RicercaPage() {
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">{a.corso?.titolo}</TableCell>
                       <TableCell>{fmtData(a.dataInizio)}</TableCell>
-                      <TableCell>{a.iscrizioni.length}</TableCell>
+                      <TableCell className="font-data tabular-nums">{a.iscrizioni.length}</TableCell>
                       <TableCell>{a.docentilezioni.map((dl: any) => `${dl.docente.cognome}`).join(", ") || "-"}</TableCell>
-                      <TableCell>€ {Number(a.costoAffitto).toFixed(2)}</TableCell>
-                      <TableCell><Badge variant="secondary">{a.stato}</Badge></TableCell>
+                      <TableCell className="font-data tabular-nums">€ {Number(a.costoAffitto).toFixed(2)}</TableCell>
+                      <TableCell><Badge variant="secondary" dot>{a.stato}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

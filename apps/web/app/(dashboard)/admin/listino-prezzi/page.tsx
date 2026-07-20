@@ -90,7 +90,7 @@ export default function ListinoPrezziPage() {
             <TableRow key={l.id}>
               <TableCell className="font-medium">{l.corso.titolo}</TableCell>
               <TableCell>{l.tipoErogazione === "AULA_FAD" ? "Presenza/FAD Sync" : "FAD Async"}</TableCell>
-              <TableCell>€ {Number(l.costo).toFixed(2)}</TableCell>
+              <TableCell className="font-data tabular-nums">€ {Number(l.costo).toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

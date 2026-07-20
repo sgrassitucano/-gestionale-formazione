@@ -83,8 +83,8 @@ export default function AulePage() {
               <TableCell><Badge variant="secondary">{MODALITA_LABELS[a.modalita] || a.modalita}</Badge></TableCell>
               <TableCell>{a.luogo?.nome ?? "-"}</TableCell>
               <TableCell><Badge variant={STATO_VARIANT[a.stato]} dot>{a.stato}</Badge></TableCell>
-              <TableCell>{a.iscrizioni?.length || 0}</TableCell>
-              <TableCell>{a.docentilezioni?.length || 0}</TableCell>
+              <TableCell className="font-data tabular-nums">{a.iscrizioni?.length || 0}</TableCell>
+              <TableCell className="font-data tabular-nums">{a.docentilezioni?.length || 0}</TableCell>
               <TableCell>{a.dataInizio ? new Date(a.dataInizio).toLocaleDateString("it-IT") : "-"}</TableCell>
               <TableCell>
                 <Link href={`/modulo-3/aule/${a.id}`}>

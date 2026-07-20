@@ -93,9 +93,9 @@ export default function Modulo5Page() {
                   <TableCell className="font-medium">{s.corso}</TableCell>
                   <TableCell><Badge variant="secondary">{MODALITA_LABELS[s.modalita]}</Badge></TableCell>
                   <TableCell>{s.luogo}</TableCell>
-                  <TableCell>{s.discentiCount}</TableCell>
-                  <TableCell className="font-semibold text-success">€ {s.importoDaFatturare.toFixed(2)}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="font-data tabular-nums">{s.discentiCount}</TableCell>
+                  <TableCell className="font-semibold text-success font-data tabular-nums">€ {s.importoDaFatturare.toFixed(2)}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm font-data tabular-nums">
                     docenti € {s.costoAtteso.docenti.toFixed(2)} + affitto € {s.costoAtteso.affitto.toFixed(2)} = € {s.costoAtteso.totale.toFixed(2)}
                   </TableCell>
                 </TableRow>
@@ -130,7 +130,7 @@ export default function Modulo5Page() {
                 {data.aggregato.aule.map((a: any) => (
                   <TableRow key={a.aulaId}>
                     <TableCell className="font-medium">{a.corso}</TableCell>
-                    <TableCell>{a.discentiCount}</TableCell>
+                    <TableCell className="font-data tabular-nums">{a.discentiCount}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

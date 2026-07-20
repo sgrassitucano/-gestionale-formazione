@@ -184,11 +184,11 @@ export default function AnagraficaCorsiPage() {
           {corsi.map((corso) => (
             <>
               <TableRow key={corso.codice} className="cursor-pointer" onClick={() => toggleExpand(corso.codice)}>
-                <TableCell className="font-mono text-xs">{corso.codice}</TableCell>
+                <TableCell className="font-mono text-xs font-data tabular-nums">{corso.codice}</TableCell>
                 <TableCell className="font-medium">{corso.titolo}</TableCell>
                 <TableCell><Badge variant={corso.tipo === "FORMAZIONE" ? "default" : "warning"}>{corso.tipo}</Badge></TableCell>
-                <TableCell>{corso.oreAula}h</TableCell>
-                <TableCell>{corso.oreElearning}h</TableCell>
+                <TableCell className="font-data tabular-nums">{corso.oreAula}h</TableCell>
+                <TableCell className="font-data tabular-nums">{corso.oreElearning}h</TableCell>
                 <TableCell>
                   <div className="flex gap-1 flex-wrap">
                     {(corso.modalitaConsentite || []).length === 0 && <span className="text-xs text-muted-foreground">—</span>}

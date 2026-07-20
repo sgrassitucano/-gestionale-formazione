@@ -294,8 +294,8 @@ export default function Modulo4Page() {
                   {TIPO_GENERAZIONE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </TableCell>
-              <TableCell>{t.campi?.length || 0} campi</TableCell>
-              <TableCell>{t.mappings?.length || 0} corsi</TableCell>
+              <TableCell className="font-data tabular-nums">{t.campi?.length || 0} campi</TableCell>
+              <TableCell className="font-data tabular-nums">{t.mappings?.length || 0} corsi</TableCell>
               <TableCell>
                 {editingId !== t.id && (
                   <div className="flex items-center gap-1">
