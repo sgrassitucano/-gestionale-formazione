@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         const rowData = parseResult.rows[rowIdx];
         const aziendaNome = rowData.azienda || "Default";
 
-        let azienda = await tx.azienda.findFirst({ where: { ragioneSociale: aziendaNome } });
+        let azienda = await tx.azienda.findFirst({ where: { ragioneSociale: aziendaNome, deletedAt: null } });
         if (!azienda) {
           azienda = await tx.azienda.create({
             data: { ragioneSociale: aziendaNome, pIva: "UNKNOWN", codiceFiscale: "UNKNOWN" },
@@ -107,7 +107,12 @@ export async function POST(request: NextRequest) {
         const savedDiscente = await tx.discente.upsert({
           where: { codiceFiscaleHash: blindIndex(discente.codiceFiscale) },
           create: { ...discenteData, aziendaId: azienda.id, codiceFiscaleHash: blindIndex(discente.codiceFiscale) },
-          update: discenteData,
+          // aziendaId e deletedAt vanno riaggiornati anche in update: senza,
+          // una persona che cambia azienda tra un import e l'altro resta
+          // agganciata alla vecchia (rompe Centri Costo silenziosamente), e
+          // un discente soft-eliminato reimportato resterebbe invisibile
+          // nelle liste pur avendo i dati aggiornati.
+          update: { ...discenteData, aziendaId: azienda.id, deletedAt: null },
         });
 
         await tx.iscrizioneAula.create({
