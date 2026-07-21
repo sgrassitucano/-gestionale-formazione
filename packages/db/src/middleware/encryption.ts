@@ -18,6 +18,28 @@ const CAMPI_CIFRATI: Record<string, Array<{ campo: string; blindIndexField?: str
 
 function cifraValore(campo: string, valore: any): string | null {
   if (valore === null || valore === undefined) return null;
+
+  // Idempotenza: se valore è già ciphertext valido per questa chiave, non
+  // ricifrarlo. Bug reale trovato (2026-07-21): cifraDataInput muta `data`
+  // IN PLACE. Prisma, quando un upsert incontra un conflitto di unicità
+  // (es. codiceFiscaleHash già esistente), a volte ritenta l'operazione
+  // internamente riusando lo STESSO oggetto args già mutato dal primo
+  // tentativo — il middleware si ritrovava a "cifrare" un valore già
+  // cifrato. Su dataNascita questo crashava rumorosamente (new Date(
+  // ciphertext).toISOString() → RangeError). Su cognome/nome/email/
+  // cellulare NON avrebbe generato alcun errore: avrebbe cifrato due volte
+  // silenziosamente, corrompendo il dato in modo invisibile (al momento
+  // della decifratura si sarebbe ottenuto il ciphertext interno invece del
+  // plaintext). Questo guard previene entrambi i casi.
+  if (typeof valore === "string") {
+    try {
+      decrypt(valore);
+      return valore; // già cifrato, nessuna azione
+    } catch {
+      // non è ciphertext valido, procede a cifrarlo normalmente
+    }
+  }
+
   const testo = campo === "dataNascita" ? new Date(valore).toISOString() : String(valore);
   return encrypt(testo);
 }

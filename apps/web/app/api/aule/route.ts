@@ -93,7 +93,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const aula = await withUserContext(user, async (tx) => {
+    const aula = await withUserContext(
+      user,
+      async (tx) => {
       const newAula = await tx.aula.create({
         data: {
           corsoCodec: meta.corsoCodec,
@@ -124,15 +126,22 @@ export async function POST(request: NextRequest) {
         }
 
         const { id: _discenteId, ...discenteData } = discente;
+        // `as any` su dataNascita: a livello applicativo è sempre un Date
+        // (vedi @gestionale/types Discente, decifraValore la ricostruisce
+        // sempre come Date dopo la lettura), ma la colonna DB e il tipo
+        // Prisma sono String (deve contenere ciphertext, non un vero
+        // DateTime — vedi commento su Discente.dataNascita in schema.prisma).
+        // Il middleware di cifratura converte il Date in ISO string prima
+        // di scriverlo davvero; Prisma non può saperlo staticamente.
         const savedDiscente = await tx.discente.upsert({
           where: { codiceFiscaleHash: blindIndex(discente.codiceFiscale) },
-          create: { ...discenteData, aziendaId: azienda.id, codiceFiscaleHash: blindIndex(discente.codiceFiscale) },
+          create: { ...discenteData, aziendaId: azienda.id, codiceFiscaleHash: blindIndex(discente.codiceFiscale) } as any,
           // aziendaId e deletedAt vanno riaggiornati anche in update: senza,
           // una persona che cambia azienda tra un import e l'altro resta
           // agganciata alla vecchia (rompe Centri Costo silenziosamente), e
           // un discente soft-eliminato reimportato resterebbe invisibile
           // nelle liste pur avendo i dati aggiornati.
-          update: { ...discenteData, aziendaId: azienda.id, deletedAt: null },
+          update: { ...discenteData, aziendaId: azienda.id, deletedAt: null } as any,
         });
 
         await tx.iscrizioneAula.create({
@@ -168,7 +177,14 @@ export async function POST(request: NextRequest) {
       });
 
       return newAula;
-    });
+      },
+      // Default Prisma 5000ms non basta con molti discenti (fino a
+      // MAX_DISCENTI_PER_AULA=35): ogni riga fa lookup+upsert azienda,
+      // upsert discente cifrato, insert iscrizione, tutto sequenziale
+      // nella stessa transazione. Stesso limite già risolto per
+      // l'export/import backup.
+      { timeout: 30000 }
+    );
 
     return NextResponse.json({ success: true, aula, discentiCount: validationResult.valid.length });
   } catch (error) {

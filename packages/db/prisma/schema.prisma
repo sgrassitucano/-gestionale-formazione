@@ -141,7 +141,7 @@ model Discente {
   matricola       String?
   cognome         String   // ENCRYPTED
   nome            String   // ENCRYPTED
-  dataNascita     DateTime? // ENCRYPTED
+  dataNascita     String? // ENCRYPTED — testo (non DateTime): la colonna deve contenere ciphertext, decifrata a runtime dal middleware
   luogoNascita    String? // città di nascita
   provinciaNascita String?
   regioneNascita  String?
