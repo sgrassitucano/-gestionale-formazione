@@ -29,16 +29,45 @@ function base64UrlDecodeToString(b64url: string): string {
   return atob(padded);
 }
 
+function base64UrlDecodeToBytes(b64url: string): Uint8Array {
+  const binary = base64UrlDecodeToString(b64url);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 async function hmacSha256(secret: string, data: string): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign", "verify"]
   );
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
   return new Uint8Array(signature);
+}
+
+// crypto.subtle.verify invece di un confronto di stringhe: il confronto
+// diretto (expected !== received) esce al primo carattere diverso, quindi
+// il tempo di risposta rivela quanti caratteri della firma sono corretti
+// (timing side-channel teorico). subtle.verify usa un confronto interno a
+// tempo costante sui byte grezzi della firma.
+async function verifyHmacSha256(secret: string, data: string, signatureB64url: string): Promise<boolean> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+  let signatureBytes: Uint8Array;
+  try {
+    signatureBytes = base64UrlDecodeToBytes(signatureB64url);
+  } catch {
+    return false;
+  }
+  return crypto.subtle.verify("HMAC", key, signatureBytes as BufferSource, new TextEncoder().encode(data));
 }
 
 export async function generateJWT(
@@ -62,10 +91,8 @@ export async function verifyJWT(token: string, secret: string): Promise<Record<s
     const [headerB64, bodyB64, signatureB64] = token.split(".");
     if (!headerB64 || !bodyB64 || !signatureB64) return null;
 
-    const expectedSignatureBytes = await hmacSha256(secret, `${headerB64}.${bodyB64}`);
-    const expectedSignature = base64UrlEncode(expectedSignatureBytes);
-
-    if (expectedSignature !== signatureB64) {
+    const valid = await verifyHmacSha256(secret, `${headerB64}.${bodyB64}`, signatureB64);
+    if (!valid) {
       return null;
     }
 

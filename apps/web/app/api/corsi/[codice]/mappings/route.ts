@@ -46,9 +46,15 @@ export async function POST(
     );
 
     return NextResponse.json({ success: true, mapping });
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    // P2003: FK violation, templateId o corsoCodec inesistente (relazione già
+    // vincolata a livello DB — vedi schema.prisma TemplateMapping). Prima
+    // finiva in un generico 500, ora messaggio chiaro all'utente.
+    if (error?.code === "P2003") {
+      return NextResponse.json({ error: "Template o corso non esistente" }, { status: 400 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
