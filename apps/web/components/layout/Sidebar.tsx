@@ -16,6 +16,7 @@ import {
   Users,
   Settings,
   DollarSign,
+  DatabaseBackup,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -104,6 +105,9 @@ export function Sidebar({ user, modules }: SidebarProps) {
             </NavLink>
             <NavLink href="/admin/audit-log" icon={ScrollText} active={isActive("/admin/audit-log")}>
               Audit Log
+            </NavLink>
+            <NavLink href="/admin/backup" icon={DatabaseBackup} active={isActive("/admin/backup")}>
+              Backup
             </NavLink>
           </>
         )}

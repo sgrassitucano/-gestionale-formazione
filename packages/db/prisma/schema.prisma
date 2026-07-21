@@ -45,6 +45,7 @@ model ProfiloUtente {
 
   // Relazioni
   logAudit             LogAudit[]
+  backupLog            BackupLog[]
   importLog            ImportLog[]
   templatesCreati      Template[] @relation("createdBy")
   archivioUpload       ArchivioAula[] @relation("uploadedBy")
@@ -79,6 +80,29 @@ model LogAudit {
   @@index([utenteId])
   @@index([createdAt])
   @@index([azione])
+}
+
+// Traccia gli export/import di backup dati (apps/web/app/api/admin/backup/*).
+// Usata per il promemoria "backup scaduto da oltre 30 giorni" nella pagina
+// admin/backup — nessuna notifica push (nessun canale email/Slack nel
+// sistema), solo un banner UI + una riga di LogAudit scritta dal cron
+// giornaliero se il backup risulta scaduto.
+model BackupLog {
+  id              String     @id @default(cuid())
+  tipo            TipoBackup
+  utenteId        String
+  utente          ProfiloUtente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  righeTotali     Int
+  dimensioneByte  Int
+  createdAt       DateTime   @default(now())
+
+  @@index([tipo])
+  @@index([createdAt])
+}
+
+enum TipoBackup {
+  EXPORT
+  IMPORT
 }
 
 // ============================================================================

@@ -148,3 +148,12 @@ CREATE POLICY la_select ON "LogAudit" FOR SELECT
 DROP POLICY IF EXISTS la_insert ON "LogAudit";
 CREATE POLICY la_insert ON "LogAudit" FOR INSERT
   WITH CHECK (app_current_role() IN ('SUPERADMIN','SEGRETERIA','AMMINISTRAZIONE','VISUALIZZATORE'));
+
+-- BackupLog: funzione admin-only (export/import backup), stesso livello di
+-- accesso di LogAudit — solo SUPERADMIN.
+ALTER TABLE "BackupLog" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BackupLog" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS bl_all ON "BackupLog";
+CREATE POLICY bl_all ON "BackupLog" FOR ALL
+  USING (app_current_role() = 'SUPERADMIN')
+  WITH CHECK (app_current_role() = 'SUPERADMIN');

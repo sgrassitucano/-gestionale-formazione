@@ -17,13 +17,21 @@ export interface DbUserContext {
  */
 export async function withUserContext<T>(
   user: DbUserContext,
-  callback: (tx: Prisma.TransactionClient) => Promise<T>
+  callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  // Default Prisma: 5000ms. Non basta per operazioni che leggono/scrivono
+  // molte tabelle in sequenza nella stessa transazione (es. export/import
+  // backup, ~23 tabelle) — verificato: l'export falliva con "Transaction
+  // already closed" al timeout di default.
+  options?: { timeout?: number }
 ): Promise<T> {
-  return db.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(`SET LOCAL app.user_id = '${escapeSqlLiteral(user.id)}'`);
-    await tx.$executeRawUnsafe(`SET LOCAL app.user_role = '${escapeSqlLiteral(user.ruolo)}'`);
-    return callback(tx);
-  });
+  return db.$transaction(
+    async (tx) => {
+      await tx.$executeRawUnsafe(`SET LOCAL app.user_id = '${escapeSqlLiteral(user.id)}'`);
+      await tx.$executeRawUnsafe(`SET LOCAL app.user_role = '${escapeSqlLiteral(user.ruolo)}'`);
+      return callback(tx);
+    },
+    options?.timeout ? { timeout: options.timeout } : undefined
+  );
 }
 
 /**
