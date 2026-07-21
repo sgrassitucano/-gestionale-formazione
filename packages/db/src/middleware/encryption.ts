@@ -51,37 +51,29 @@ function cifraDataInput(model: string, data: Record<string, any>): void {
   }
 }
 
-// Firme strutturali per riconoscere un record cifrato ovunque compaia nel
-// risultato — anche annidato dentro un `include` di un altro modello (Prisma
-// $use vede solo il modello radice della query: params.model non aiuta a
-// sapere se `result.iscrizioni[].discente` è un Discente). Basta guardare le
-// chiavi presenti: solo Discente ha sia cognome che codiceFiscale insieme,
-// solo ProfiloUtente ha sia email che passwordHash insieme.
-const FIRME_MODELLO: Array<{ model: string; richiedeChiavi: string[] }> = [
-  { model: "Discente", richiedeChiavi: ["cognome", "codiceFiscale"] },
-  { model: "ProfiloUtente", richiedeChiavi: ["email", "passwordHash"] },
-];
-
-function riconosciModello(obj: Record<string, any>): string | null {
-  for (const { model, richiedeChiavi } of FIRME_MODELLO) {
-    if (richiedeChiavi.every((k) => k in obj)) return model;
-  }
-  return null;
-}
-
-function decifraOggetto(model: string, obj: Record<string, any>): void {
-  const campi = CAMPI_CIFRATI[model];
-  if (!campi) return;
-  for (const { campo } of campi) {
-    if (campo in obj) obj[campo] = decifraValore(campo, obj[campo]);
-  }
-}
+// Insieme piatto di tutti i nomi di campo cifrati, unione su tutti i
+// modelli (es. "email" copre sia ProfiloUtente.email che Discente.email).
+// Usato per decifrare per NOME DI CAMPO invece che per "modello
+// riconosciuto": un tentativo precedente riconosceva il modello da una
+// firma di chiavi obbligatorie (es. ProfiloUtente = ha sia "email" che
+// "passwordHash"), ma qualunque `select` che escludesse anche solo una
+// chiave della firma (es. `select: { email, nome, cognome }` in
+// audit/logs/route.ts, senza passwordHash) faceva fallire il
+// riconoscimento e l'email restava in chiaro — bug reale, verificato.
+// Sicuro anche se il nome campo collide con un campo NON cifrato di un
+// altro modello (es. Docente.nome/cognome/email sono in chiaro): decrypt()
+// usa AEAD (nacl.secretbox), fallisce sempre su testo non cifrato, e
+// decifraValore già cattura l'eccezione restituendo il valore originale.
+const CAMPI_CIFRATI_NOMI = new Set(
+  Object.values(CAMPI_CIFRATI).flatMap((campi) => campi.map((c) => c.campo))
+);
 
 /**
  * Attraversa ricorsivamente qualunque risultato Prisma (root + relazioni
- * incluse a qualunque profondità) e decifra ogni oggetto la cui forma
- * corrisponde a un modello cifrato, indipendentemente da dove compare
- * nell'albero (root, dentro un array, dentro un `include` annidato).
+ * incluse a qualunque profondità, qualunque combinazione di `select`) e
+ * decifra ogni campo il cui nome corrisponde a un campo cifrato noto,
+ * indipendentemente da dove compare nell'albero o da quali altri campi
+ * sono stati selezionati insieme.
  */
 function decifraProfondo(valore: any, visti = new WeakSet<object>()): any {
   if (valore === null || typeof valore !== "object") return valore;
@@ -95,12 +87,13 @@ function decifraProfondo(valore: any, visti = new WeakSet<object>()): any {
 
   if (valore instanceof Date) return valore;
 
-  const modelloRiconosciuto = riconosciModello(valore);
-  if (modelloRiconosciuto) decifraOggetto(modelloRiconosciuto, valore);
-
   for (const key of Object.keys(valore)) {
     const v = valore[key];
-    if (v && typeof v === "object") decifraProfondo(v, visti);
+    if (CAMPI_CIFRATI_NOMI.has(key)) {
+      valore[key] = decifraValore(key, v);
+    } else if (v && typeof v === "object") {
+      decifraProfondo(v, visti);
+    }
   }
 
   return valore;
