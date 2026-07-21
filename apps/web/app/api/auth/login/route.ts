@@ -16,7 +16,14 @@ export async function POST(request: NextRequest) {
 
     const result = await loginUser(email, password);
 
-    if (!result) {
+    if (result.esito === "bloccato") {
+      return NextResponse.json(
+        { error: `Troppi tentativi falliti. Riprova tra ${result.minutiResidui} minuti.` },
+        { status: 429 }
+      );
+    }
+
+    if (result.esito === "credenziali_errate") {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }

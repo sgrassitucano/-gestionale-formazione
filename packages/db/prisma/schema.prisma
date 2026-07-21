@@ -35,6 +35,14 @@ model ProfiloUtente {
   updatedAt            DateTime @updatedAt
   deletedAt            DateTime? // soft-delete
 
+  // Rate limiting login: account-based invece di in-memory, perché su
+  // Vercel ogni invocazione serverless può girare su un'istanza diversa —
+  // un contatore in-memory per-processo non vedrebbe i tentativi falliti
+  // fatti su altre istanze. Persistendo su riga utente il lockout funziona
+  // correttamente indipendentemente da quante istanze girano in parallelo.
+  tentativiFalliti     Int      @default(0)
+  bloccatoFino         DateTime?
+
   // Relazioni
   logAudit             LogAudit[]
   importLog            ImportLog[]
