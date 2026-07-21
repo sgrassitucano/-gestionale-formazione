@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "./lib/jwt";
 import { getSessionToken } from "./lib/session";
 
-const PREVIEW_MODE = true; // TODO: rimuovere quando si vuole attivare il login vero (bug risolto, verificato — vedi lib/crypto.ts)
+const PREVIEW_MODE = false; // Login vero attivo dal 2026-07-21 (bug crypto risolto, header forgery fixato, verificato)
 const PREVIEW_USER = {
   id: "cmrex51bi0000qi34k6c344eb", // s.grassi@iltucano.net
   email: "s.grassi@iltucano.net",

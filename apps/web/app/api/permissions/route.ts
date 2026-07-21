@@ -6,10 +6,15 @@ export async function GET(request: NextRequest) {
   try {
     const user = getSessionUserFromRequest(request);
 
-    if (!user || user.ruolo !== "SUPERADMIN") {
+    // Lettura per tutti i ruoli autenticati: serve a costruire il menu di
+    // navigazione per chiunque, non solo per SUPERADMIN (coerente con la
+    // policy RLS mp_select). Prima era ristretta a SUPERADMIN, quindi ogni
+    // altro ruolo riceveva 403 al primo caricamento del layout dashboard.
+    // La scrittura resta SUPERADMIN-only (vedi permissions/[moduloId]).
+    if (!user) {
       return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
