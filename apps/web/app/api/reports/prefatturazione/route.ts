@@ -36,12 +36,31 @@ export async function GET(request: NextRequest) {
         corso: { include: { listiniPrezzi: true } },
         iscrizioni: { where: { deletedAt: null } },
         docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+        bilancio: true,
       },
       orderBy: { dataInizio: "desc" },
     })
   );
 
+  // Preferisce lo snapshot immutabile (vedi BilancioAula in schema.prisma);
+  // fallback al calcolo live solo per aule concluse prima dell'introduzione
+  // dello snapshot e non ancora backfillate.
   const report = aule.map((a) => {
+    if (a.bilancio) {
+      return {
+        aulaId: a.id,
+        corso: a.corso.titolo,
+        corsoCodice: a.corso.codice,
+        modalita: a.modalita,
+        discentiCount: a.bilancio.discentiCount,
+        ricavo: Number(a.bilancio.ricavo),
+        costo: Number(a.bilancio.costoTotale),
+        margine: Number(a.bilancio.margine),
+        marginePct: Number(a.bilancio.marginePct),
+        dataInizio: a.dataInizio,
+      };
+    }
+
     const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
     const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
     const ricavo = calculateRicavo(tipoErogazione as any, listino ? Number(listino.costo) : 0, a.iscrizioni.length);

@@ -31,13 +31,34 @@ export async function GET(request: NextRequest) {
         luogo: true,
         iscrizioni: { where: { deletedAt: null } },
         docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+        bilancio: true,
       },
     })
   );
 
+  // Preferisce lo snapshot immutabile (vedi BilancioAula in schema.prisma):
+  // l'importo da fatturare deve combaciare con quanto poi appare nei report
+  // Mod.6, non ricalcolato al prezzo di OGGI se cambiato nel frattempo.
   const singole = aule
     .filter((a) => a.modalita === "PRESENZA" || a.modalita === "FAD_SINCRONA")
     .map((a) => {
+      if (a.bilancio) {
+        return {
+          aulaId: a.id,
+          corso: a.corso.titolo,
+          modalita: a.modalita,
+          luogo: a.luogo?.nome ?? "",
+          discentiCount: a.bilancio.discentiCount,
+          dataInizio: a.dataInizio,
+          importoDaFatturare: Number(a.bilancio.ricavo),
+          costoAtteso: {
+            docenti: Number(a.bilancio.costoDocenti),
+            affitto: Number(a.bilancio.costoAffitto),
+            totale: Number(a.bilancio.costoTotale),
+          },
+        };
+      }
+
       const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === "AULA_FAD");
       const importo = listino ? Number(listino.costo) : 0;
       const costoDocenti = a.docentilezioni.reduce(
@@ -68,6 +89,17 @@ export async function GET(request: NextRequest) {
   // "il primo" non era nemmeno deterministico tra una run e l'altra.
   const asincrone = aule.filter((a) => a.modalita === "FAD_ASINCRONA");
   const asincroneConImporto = asincrone.map((a) => {
+    if (a.bilancio) {
+      const discentiCount = a.bilancio.discentiCount;
+      const importo = Number(a.bilancio.ricavo);
+      return {
+        aulaId: a.id,
+        corso: a.corso.titolo,
+        discentiCount,
+        costoUnitario: discentiCount > 0 ? importo / discentiCount : 0,
+        importo,
+      };
+    }
     const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === "E_LEARNING");
     const costoUnitario = listino ? Number(listino.costo) : 0;
     return {

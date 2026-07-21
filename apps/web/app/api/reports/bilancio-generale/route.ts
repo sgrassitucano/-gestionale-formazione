@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         corso: { include: { listiniPrezzi: true } },
         iscrizioni: { where: { deletedAt: null } },
         docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+        bilancio: true,
       },
     });
 
@@ -62,6 +63,15 @@ export async function GET(request: NextRequest) {
   let usciteAffitto = 0;
 
   for (const aula of aule) {
+    // Preferisce lo snapshot immutabile (vedi BilancioAula in
+    // schema.prisma); fallback al calcolo live solo per aule concluse
+    // prima dell'introduzione dello snapshot e non ancora backfillate.
+    if (aula.bilancio) {
+      entrateAule += Number(aula.bilancio.ricavo);
+      usciteDocenti += Number(aula.bilancio.costoDocenti);
+      usciteAffitto += Number(aula.bilancio.costoAffitto);
+      continue;
+    }
     const tipoErogazione = aula.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
     const listino = aula.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
     entrateAule += calculateRicavo(tipoErogazione as any, listino ? Number(listino.costo) : 0, aula.iscrizioni.length);

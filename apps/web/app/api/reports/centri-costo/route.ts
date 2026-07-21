@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         corso: true,
         iscrizioni: { where: { deletedAt: null } },
         docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+        centriCosto: true,
       },
     })
   );
@@ -48,7 +49,25 @@ export async function GET(request: NextRequest) {
     dataInizio: Date | null;
   }> = [];
 
+  // Preferisce lo snapshot immutabile (vedi CentroCostoSnapshot in
+  // schema.prisma); fallback al calcolo live solo per aule concluse prima
+  // dell'introduzione dello snapshot e non ancora backfillate.
   for (const a of aule) {
+    if (a.centriCosto.length > 0) {
+      for (const entry of a.centriCosto) {
+        report.push({
+          aulaId: a.id,
+          corso: a.corso.titolo,
+          cantiere: entry.cantiere,
+          sottocantiere: entry.sottocantiere,
+          responsabile: entry.responsabile,
+          costoAttribuito: Number(entry.costoAttribuito),
+          dataInizio: a.dataInizio,
+        });
+      }
+      continue;
+    }
+
     const costoDocenti = calculateCostoDocenti(
       a.docentilezioni.map((dl) => ({
         oreEffettiveDocenza: Number(dl.oreEffettiveDocenza),

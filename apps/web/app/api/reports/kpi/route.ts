@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
           corso: { include: { listiniPrezzi: true } },
           iscrizioni: { where: { deletedAt: null } },
           docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+          bilancio: true,
         },
       }),
     ])
@@ -46,18 +47,34 @@ export async function GET(request: NextRequest) {
   let costoTotaleSum = 0;
 
   for (const a of aule) {
-    const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
-    const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
-    const ricavo = calculateRicavo(tipoErogazione as any, listino ? Number(listino.costo) : 0, a.iscrizioni.length);
-    const costoDocenti = calculateCostoDocenti(
-      a.docentilezioni.map((dl) => ({
-        oreEffettiveDocenza: Number(dl.oreEffettiveDocenza),
-        tariffaOraria: Number(dl.docente.tariffaOraria),
-        trasferAcosto: Number(dl.trasferAcosto),
-      }))
-    );
-    const costoTotaleAula = costoDocenti + Number(a.costoAffitto);
-    const bilancio = calculateBilancio(ricavo, costoTotaleAula);
+    // Preferisce lo snapshot immutabile creato alla chiusura (vedi
+    // BilancioAula in schema.prisma): fallback al calcolo live solo per
+    // aule concluse prima dell'introduzione dello snapshot e non ancora
+    // backfillate.
+    let ricavo: number;
+    let costoDocenti: number;
+    let costoTotaleAula: number;
+    let bilancio: ReturnType<typeof calculateBilancio>;
+
+    if (a.bilancio) {
+      ricavo = Number(a.bilancio.ricavo);
+      costoDocenti = Number(a.bilancio.costoDocenti);
+      costoTotaleAula = Number(a.bilancio.costoTotale);
+      bilancio = { ricavo, costoTotale: costoTotaleAula, margine: Number(a.bilancio.margine), marginePct: Number(a.bilancio.marginePct) };
+    } else {
+      const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
+      const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
+      ricavo = calculateRicavo(tipoErogazione as any, listino ? Number(listino.costo) : 0, a.iscrizioni.length);
+      costoDocenti = calculateCostoDocenti(
+        a.docentilezioni.map((dl) => ({
+          oreEffettiveDocenza: Number(dl.oreEffettiveDocenza),
+          tariffaOraria: Number(dl.docente.tariffaOraria),
+          trasferAcosto: Number(dl.trasferAcosto),
+        }))
+      );
+      costoTotaleAula = costoDocenti + Number(a.costoAffitto);
+      bilancio = calculateBilancio(ricavo, costoTotaleAula);
+    }
 
     const corsoTitolo = a.corso.titolo;
     discentiPerCorso[corsoTitolo] = (discentiPerCorso[corsoTitolo] || 0) + a.iscrizioni.length;

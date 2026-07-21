@@ -3,6 +3,7 @@ export interface CentroCostoEntry {
   sottocantiere: string | null;
   responsabile: string | null;
   costoAttribuito: number;
+  discentiCount: number;
 }
 
 export function calculateCentriCosto(
@@ -35,5 +36,6 @@ export function calculateCentriCosto(
     sottocantiere: g.sottocantiere,
     responsabile: g.responsabile,
     costoAttribuito: (costoTotale / totalDiscenti) * g.count,
+    discentiCount: g.count,
   }));
 }

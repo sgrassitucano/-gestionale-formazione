@@ -270,6 +270,8 @@ model Aula {
   docentilezioni  DocenteLezione[]
   archivio        ArchivioAula[]
   chiusura        ChiusuraAula?
+  bilancio        BilancioAula?
+  centriCosto     CentroCostoSnapshot[]
 
   @@index([corsoCodec])
   @@index([stato])
@@ -277,6 +279,53 @@ model Aula {
   @@index([dataInizio])
   @@index([deletedAt])
   @@index([luogoId])
+}
+
+// Snapshot immutabile creato al momento della chiusura aula (transizione
+// IN_CORSO -> CONCLUSA in PUT /api/aule/[aulaId]). "Blocca" ricavo/costi al
+// prezzo/tariffe vigenti in quel momento: senza questo, i report Mod.5/6/7
+// (prima calcolati sempre live da ListinoPrezzi/Docente.tariffaOraria
+// CORRENTI) cambiavano retroattivamente ogni volta che si aggiornava un
+// prezzo, anche per aule chiuse e fatturate mesi prima — nessuno storico
+// per audit contabile. Un'aula CONCLUSA ha sempre uno snapshot da qui in
+// avanti; le aule già CONCLUSA prima di questa migrazione sono state
+// backfillate una tantum con i valori correnti al momento del backfill
+// (non i valori storici reali, che non erano mai stati registrati).
+model BilancioAula {
+  id              String   @id @default(cuid())
+  aulaId          String   @unique
+  aula            Aula     @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  corsoTitolo     String   // denormalizzato: resta leggibile anche se il corso cambia titolo dopo
+  modalita        ModalitaErogazione
+  discentiCount   Int
+  ricavo          Decimal  @db.Decimal(10, 2)
+  costoDocenti    Decimal  @db.Decimal(10, 2)
+  costoAffitto    Decimal  @db.Decimal(10, 2)
+  costoTotale     Decimal  @db.Decimal(10, 2)
+  margine         Decimal  @db.Decimal(10, 2)
+  marginePct      Decimal  @db.Decimal(6, 2)
+  dataChiusura    DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([dataChiusura])
+}
+
+// Distribuzione centri di costo per cantiere/sottocantiere, snapshot allo
+// stesso momento di BilancioAula (stessa transazione di chiusura). Una riga
+// per ogni cantiere/sottocantiere coinvolto nell'aula.
+model CentroCostoSnapshot {
+  id              String   @id @default(cuid())
+  aulaId          String
+  aula            Aula     @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  cantiere        String
+  sottocantiere   String?
+  responsabile    String?
+  discentiCount   Int
+  costoAttribuito Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+
+  @@index([aulaId])
+  @@index([cantiere])
 }
 
 model Lezione {

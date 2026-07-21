@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
+import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
 
 export async function GET(
   request: NextRequest,
@@ -86,6 +88,69 @@ export async function PUT(
       }
 
       const updated = await tx.aula.update({ where: { id: params.aulaId }, data });
+
+      // Snapshot immutabile bilancio/centri-costo alla chiusura (transizione
+      // -> CONCLUSA): "blocca" ricavo/costi alle tariffe vigenti ORA, così i
+      // report Mod.5/6/7 non cambiano più retroattivamente se in futuro si
+      // aggiorna un prezzo listino o una tariffa docente (vedi
+      // packages/db/prisma/schema.prisma, modello BilancioAula per il
+      // dettaglio del problema che risolve).
+      if (data.stato === "CONCLUSA") {
+        const aulaCompleta = await tx.aula.findUniqueOrThrow({
+          where: { id: params.aulaId },
+          include: {
+            corso: { include: { listiniPrezzi: true } },
+            iscrizioni: { where: { deletedAt: null } },
+            docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
+          },
+        });
+
+        const tipoErogazione = aulaCompleta.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
+        const listino = aulaCompleta.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
+        const ricavo = calculateRicavo(tipoErogazione as any, listino ? Number(listino.costo) : 0, aulaCompleta.iscrizioni.length);
+        const costoDocenti = calculateCostoDocenti(
+          aulaCompleta.docentilezioni.map((dl) => ({
+            oreEffettiveDocenza: Number(dl.oreEffettiveDocenza),
+            tariffaOraria: Number(dl.docente.tariffaOraria),
+            trasferAcosto: Number(dl.trasferAcosto),
+          }))
+        );
+        const costoAffitto = Number(aulaCompleta.costoAffitto);
+        const costoTotale = costoDocenti + costoAffitto;
+        const bilancio = calculateBilancio(ricavo, costoTotale);
+
+        await tx.bilancioAula.upsert({
+          where: { aulaId: params.aulaId },
+          create: {
+            aulaId: params.aulaId,
+            corsoTitolo: aulaCompleta.corso.titolo,
+            modalita: aulaCompleta.modalita,
+            discentiCount: aulaCompleta.iscrizioni.length,
+            ricavo: bilancio.ricavo,
+            costoDocenti,
+            costoAffitto,
+            costoTotale: bilancio.costoTotale,
+            margine: bilancio.margine,
+            marginePct: bilancio.marginePct,
+          },
+          update: {}, // immutabile: se esiste già (non dovrebbe, la state machine impedisce di richiudere), non lo tocchiamo
+        });
+
+        const distribuzione = calculateCentriCosto(costoTotale, aulaCompleta.iscrizioni);
+        await tx.centroCostoSnapshot.deleteMany({ where: { aulaId: params.aulaId } });
+        if (distribuzione.length > 0) {
+          await tx.centroCostoSnapshot.createMany({
+            data: distribuzione.map((d) => ({
+              aulaId: params.aulaId,
+              cantiere: d.cantiere,
+              sottocantiere: d.sottocantiere,
+              responsabile: d.responsabile,
+              discentiCount: d.discentiCount,
+              costoAttribuito: d.costoAttribuito,
+            })),
+          });
+        }
+      }
 
       await tx.logAudit.create({
         data: {

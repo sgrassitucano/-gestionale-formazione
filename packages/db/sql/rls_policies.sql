@@ -73,6 +73,35 @@ CREATE POLICY vc_write ON "VoceContabile" FOR ALL
   USING (app_current_role() IN ('SUPERADMIN','AMMINISTRAZIONE'))
   WITH CHECK (app_current_role() IN ('SUPERADMIN','AMMINISTRAZIONE'));
 
+-- BilancioAula / CentroCostoSnapshot: scritte automaticamente dal sistema
+-- alla chiusura aula (PUT /api/aule/[aulaId], transizione -> CONCLUSA),
+-- eseguibile da SEGRETERIA o SUPERADMIN (unici ruoli che possono chiudere
+-- un'aula) — per questo la policy di scrittura include SEGRETERIA anche
+-- se normalmente non lavora su Mod.5/7: qui non sta leggendo/editando dati
+-- finanziari, sta solo innescando un effetto collaterale della chiusura
+-- aula (Mod.3, di sua competenza). La LETTURA invece segue la stessa
+-- matrice di VoceContabile (SUPERADMIN+AMMINISTRAZIONE+VISUALIZZATORE):
+-- SEGRETERIA chiude l'aula ma non vede le cifre del bilancio risultante.
+ALTER TABLE "BilancioAula" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BilancioAula" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ba_select ON "BilancioAula";
+CREATE POLICY ba_select ON "BilancioAula" FOR SELECT
+  USING (app_current_role() IN ('SUPERADMIN','AMMINISTRAZIONE','VISUALIZZATORE'));
+DROP POLICY IF EXISTS ba_write ON "BilancioAula";
+CREATE POLICY ba_write ON "BilancioAula" FOR ALL
+  USING (app_current_role() IN ('SUPERADMIN','SEGRETERIA'))
+  WITH CHECK (app_current_role() IN ('SUPERADMIN','SEGRETERIA'));
+
+ALTER TABLE "CentroCostoSnapshot" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "CentroCostoSnapshot" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ccs_select ON "CentroCostoSnapshot";
+CREATE POLICY ccs_select ON "CentroCostoSnapshot" FOR SELECT
+  USING (app_current_role() IN ('SUPERADMIN','AMMINISTRAZIONE','VISUALIZZATORE'));
+DROP POLICY IF EXISTS ccs_write ON "CentroCostoSnapshot";
+CREATE POLICY ccs_write ON "CentroCostoSnapshot" FOR ALL
+  USING (app_current_role() IN ('SUPERADMIN','SEGRETERIA'))
+  WITH CHECK (app_current_role() IN ('SUPERADMIN','SEGRETERIA'));
+
 -- ============================================================
 -- Tabelle amministrative sensibili (Modulo 1): accesso ristretto.
 -- ============================================================
