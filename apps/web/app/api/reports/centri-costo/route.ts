@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { hasRuolo, RUOLI_PREFATTURAZIONE_CENTRI_COSTO } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
 import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
 import { calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
@@ -12,7 +13,9 @@ function monthRange(mese: string) {
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasRuolo(user, RUOLI_PREFATTURAZIONE_CENTRI_COSTO)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const mese = searchParams.get("mese");

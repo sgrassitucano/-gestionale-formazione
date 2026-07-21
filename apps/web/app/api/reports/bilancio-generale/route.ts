@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { hasRuolo, RUOLI_REPORT_KPI } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
 import { calculateRicavo, calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
 
@@ -16,7 +17,9 @@ function countMonthsOverlap(voceStart: Date, voceEnd: Date | null, rangeStart: D
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasRuolo(user, RUOLI_REPORT_KPI)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const daParam = searchParams.get("da"); // YYYY-MM

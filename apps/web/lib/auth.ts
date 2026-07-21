@@ -3,6 +3,7 @@ import { withServiceContext } from "@gestionale/db/context";
 import { type SessionUser, type ProfiloUtente, Ruolo } from "@gestionale/types";
 import { hashPassword, verifyPassword, generateJWT, verifyJWT } from "./crypto";
 import { blindIndex } from "@gestionale/utils/encryption";
+import { MODULI_VISIBILI } from "./matrice-moduli";
 
 const JWT_SECRET = process.env.NEXT_PUBLIC_SESSION_SECRET || "dev-secret-change-me";
 
@@ -41,9 +42,12 @@ export async function createUser(
         },
       });
 
-      // Seed module permissions for this role
-      const modules = [1, 2, 3, 4, 5];
-      for (const moduloId of modules) {
+      // Seed permessi modulo per questo ruolo, secondo la matrice decisa
+      // (MODULI_VISIBILI) — non più "tutti visibili di default" (bug: dava
+      // visible:true a ogni combinazione ruolo/modulo indipendentemente
+      // dalla matrice reale, e copriva solo i moduli 1-5, mai 6/7).
+      for (let moduloId = 1; moduloId <= 7; moduloId++) {
+        const visible = MODULI_VISIBILI[ruolo]?.includes(moduloId) ?? false;
         await tx.moduloPermesso.upsert({
           where: {
             ruolo_moduloId: {
@@ -54,7 +58,7 @@ export async function createUser(
           create: {
             ruolo,
             moduloId,
-            visible: true,
+            visible,
           },
           update: {},
         });

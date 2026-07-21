@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { hasRuolo, RUOLI_PREFATTURAZIONE_CENTRI_COSTO } from "@/lib/permessi";
 
 function monthRange(mese: string) {
   const [year, month] = mese.split("-").map(Number);
@@ -9,7 +10,9 @@ function monthRange(mese: string) {
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasRuolo(user, RUOLI_PREFATTURAZIONE_CENTRI_COSTO)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const mese = searchParams.get("mese");
@@ -19,7 +22,10 @@ export async function GET(request: NextRequest) {
 
   const aule = await withUserContext(user, (tx) =>
     tx.aula.findMany({
-      where: { deletedAt: null, dataInizio: { gte: start, lte: end } },
+      // stato: CONCLUSA — senza, proponeva di fatturare corsi ancora
+      // PIANIFICATA/IN_CORSO (non svolti, potenzialmente annullabili),
+      // in contrasto col trigger dichiarato in CLAUDE.md per Modulo 5.
+      where: { deletedAt: null, dataInizio: { gte: start, lte: end }, stato: "CONCLUSA" },
       include: {
         corso: { include: { listiniPrezzi: true } },
         luogo: true,
@@ -55,22 +61,32 @@ export async function GET(request: NextRequest) {
       };
     });
 
+  // Prezzo e-learning per aula, non un unico prezzo globale preso dalla
+  // prima aula del mese: con più corsi asincroni a listino diverso nello
+  // stesso mese, usare asincrone[0] applicava il prezzo di UN corso a
+  // TUTTI i discenti (sotto/sovra-fatturazione reale), e senza orderBy
+  // "il primo" non era nemmeno deterministico tra una run e l'altra.
   const asincrone = aule.filter((a) => a.modalita === "FAD_ASINCRONA");
-  const totalDiscentiAsincrone = asincrone.reduce((sum, a) => sum + a.iscrizioni.length, 0);
-
-  let importoAsincrone = 0;
-  if (asincrone.length > 0) {
-    const listino = asincrone[0].corso.listiniPrezzi.find((l) => l.tipoErogazione === "E_LEARNING");
+  const asincroneConImporto = asincrone.map((a) => {
+    const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === "E_LEARNING");
     const costoUnitario = listino ? Number(listino.costo) : 0;
-    importoAsincrone = costoUnitario * totalDiscentiAsincrone;
-  }
+    return {
+      aulaId: a.id,
+      corso: a.corso.titolo,
+      discentiCount: a.iscrizioni.length,
+      costoUnitario,
+      importo: costoUnitario * a.iscrizioni.length,
+    };
+  });
+  const totalDiscentiAsincrone = asincroneConImporto.reduce((sum, a) => sum + a.discentiCount, 0);
+  const importoAsincrone = asincroneConImporto.reduce((sum, a) => sum + a.importo, 0);
 
   return NextResponse.json({
     success: true,
     mese,
     singole,
     aggregato: {
-      aule: asincrone.map((a) => ({ aulaId: a.id, corso: a.corso.titolo, discentiCount: a.iscrizioni.length })),
+      aule: asincroneConImporto,
       totalDiscenti: totalDiscentiAsincrone,
       importoDaFatturare: importoAsincrone,
     },

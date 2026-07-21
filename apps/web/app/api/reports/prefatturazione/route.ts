@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { hasRuolo, RUOLI_REPORT_KPI } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
 import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
 import { exportToXlsx } from "@gestionale/utils/xlsx-exporter";
@@ -12,7 +13,9 @@ function monthRange(mese: string) {
 // Bilancio Aule (live) — usato dal Modulo Report
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasRuolo(user, RUOLI_REPORT_KPI)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const mese = searchParams.get("mese");

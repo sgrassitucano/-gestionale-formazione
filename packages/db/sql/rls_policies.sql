@@ -57,14 +57,17 @@ CREATE POLICY op_write ON "ListinoPrezzi" FOR ALL
   WITH CHECK (app_current_role() = 'SUPERADMIN');
 
 -- ============================================================
--- Tabella finanziaria (Modulo 5): SUPERADMIN + AMMINISTRAZIONE scrivono,
--- tutti leggono (serve anche a SEGRETERIA/VISUALIZZATORE per i report incrociati).
+-- Tabella finanziaria (Modulo 5/7): SUPERADMIN + AMMINISTRAZIONE scrivono
+-- e leggono, VISUALIZZATORE legge. SEGRETERIA esclusa (decisione utente
+-- 2026-07-21: lavora solo su Mod.1-4/aule, non su prefatturazione/centri
+-- costo — prima la policy la faceva leggere, allineato ora alla matrice
+-- app-level in apps/web/lib/permessi.ts).
 -- ============================================================
 ALTER TABLE "VoceContabile" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "VoceContabile" FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS vc_select ON "VoceContabile";
 CREATE POLICY vc_select ON "VoceContabile" FOR SELECT
-  USING (app_current_role() IN ('SUPERADMIN','SEGRETERIA','AMMINISTRAZIONE','VISUALIZZATORE'));
+  USING (app_current_role() IN ('SUPERADMIN','AMMINISTRAZIONE','VISUALIZZATORE'));
 DROP POLICY IF EXISTS vc_write ON "VoceContabile";
 CREATE POLICY vc_write ON "VoceContabile" FOR ALL
   USING (app_current_role() IN ('SUPERADMIN','AMMINISTRAZIONE'))

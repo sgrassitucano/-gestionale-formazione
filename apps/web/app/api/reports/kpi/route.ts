@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { hasRuolo, RUOLI_REPORT_KPI } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
 import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
 import { buildRevenueTrend } from "@gestionale/utils/kpi-calculator";
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasRuolo(user, RUOLI_REPORT_KPI)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const dataInizioStr = searchParams.get("dataInizio");
