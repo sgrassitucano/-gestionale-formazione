@@ -45,8 +45,11 @@ export async function createUser(
       // Seed permessi modulo per questo ruolo, secondo la matrice decisa
       // (MODULI_VISIBILI) — non più "tutti visibili di default" (bug: dava
       // visible:true a ogni combinazione ruolo/modulo indipendentemente
-      // dalla matrice reale, e copriva solo i moduli 1-5, mai 6/7).
-      for (let moduloId = 1; moduloId <= 7; moduloId++) {
+      // dalla matrice reale). moduloId 1-5: schema locale del menu (vedi
+      // commento in matrice-moduli.ts), NON la numerazione Modulo 1-7 di
+      // CLAUDE.md — righe oltre il 5 non hanno un mapping nav e rompono
+      // il rendering (bug reale trovato e corretto il 2026-07-21).
+      for (let moduloId = 1; moduloId <= 5; moduloId++) {
         const visible = MODULI_VISIBILI[ruolo]?.includes(moduloId) ?? false;
         await tx.moduloPermesso.upsert({
           where: {

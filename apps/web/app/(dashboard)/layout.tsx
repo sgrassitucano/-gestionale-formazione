@@ -44,19 +44,24 @@ export default function DashboardLayout({
           // Load permissions
           const permsResponse = await axios.get("/api/permissions");
           if (permsResponse.data.permissions) {
-            const modulesWithNames = permsResponse.data.permissions
-              .reduce((acc: any[], perm: any) => {
-                const existing = acc.find((m) => m.id === perm.moduloId);
-                if (!existing) {
-                  acc.push({
-                    id: perm.moduloId,
-                    name: MODULE_NAMES[perm.moduloId],
-                    route: MODULE_ROUTES[perm.moduloId],
-                    visible: perm.visible && perm.ruolo === response.data.user.ruolo,
-                  });
-                }
-                return acc;
-              }, [])
+            // /api/permissions restituisce le righe di TUTTI i ruoli (serve
+            // a mostrare la matrice nella pagina admin/permissions), non
+            // solo quelle dell'utente loggato — bug reale trovato: il
+            // reduce precedente prendeva la PRIMA riga per moduloId
+            // incontrata nell'array, che poteva appartenere a un ruolo
+            // diverso da quello dell'utente corrente (l'ordine non è
+            // raggruppato per ruolo). Va filtrato per ruolo PRIMA di
+            // costruire il menu, non durante.
+            const permessiUtente = permsResponse.data.permissions.filter(
+              (p: any) => p.ruolo === response.data.user.ruolo
+            );
+            const modulesWithNames = permessiUtente
+              .map((perm: any) => ({
+                id: perm.moduloId,
+                name: MODULE_NAMES[perm.moduloId],
+                route: MODULE_ROUTES[perm.moduloId],
+                visible: perm.visible,
+              }))
               .sort((a: any, b: any) => a.id - b.id);
 
             setModules(modulesWithNames);
