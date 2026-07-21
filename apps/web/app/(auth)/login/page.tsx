@@ -18,11 +18,6 @@ export default function LoginPage() {
           </div>
 
           <LoginForm />
-
-          <div className="mt-6 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-            <p>Demo Credentials</p>
-            <p className="font-mono mt-1">admin@example.com / admin123</p>
-          </div>
         </CardContent>
       </Card>
     </div>
