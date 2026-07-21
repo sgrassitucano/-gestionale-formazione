@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginUser } from "@/lib/auth";
 import { setSessionCookie } from "@/lib/session";
+import { blindIndex } from "@gestionale/utils/encryption";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -13,6 +14,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const { email, password } = loginSchema.parse(body);
+
+    console.log("DEBUG login emailHash:", blindIndex(email));
 
     const result = await loginUser(email, password);
 
