@@ -16,6 +16,13 @@ const addIscrizioneSchema = z.object({
   responsabile: z.string().optional(),
 });
 
+const editIscrizioneSchema = z.object({
+  iscrizioneId: z.string(),
+  cantiere: z.string().optional(),
+  sottocantiere: z.string().optional(),
+  responsabile: z.string().optional(),
+});
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { aulaId: string } }
@@ -77,6 +84,57 @@ export async function POST(
       });
 
       return { status: 200 as const, body: { success: true, iscrizione } };
+    });
+
+    return NextResponse.json(result.body, { status: result.status });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { aulaId: string } }
+) {
+  const user = getSessionUserFromRequest(request);
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const data = editIscrizioneSchema.parse(body);
+
+    const result = await withUserContext(user, async (tx) => {
+      const aula = await tx.aula.findUnique({ where: { id: params.aulaId } });
+      if (!aula || aula.deletedAt) {
+        return { status: 404 as const, body: { error: "Aula non trovata" } };
+      }
+      if (aula.stato === "CONCLUSA") {
+        return { status: 409 as const, body: { error: "Aula conclusa: elenco discenti non più modificabile" } };
+      }
+
+      const iscrizione = await tx.iscrizioneAula.findFirst({
+        where: { id: data.iscrizioneId, aulaId: params.aulaId, deletedAt: null },
+      });
+      if (!iscrizione) {
+        return { status: 404 as const, body: { error: "Iscrizione non trovata" } };
+      }
+
+      const updated = await tx.iscrizioneAula.update({
+        where: { id: data.iscrizioneId },
+        data: {
+          cantiere: data.cantiere,
+          sottocantiere: data.sottocantiere,
+          responsabile: data.responsabile,
+        },
+        include: { discente: true },
+      });
+
+      return { status: 200 as const, body: { success: true, iscrizione: updated } };
     });
 
     return NextResponse.json(result.body, { status: result.status });

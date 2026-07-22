@@ -129,7 +129,7 @@ export default function AulaDetailPage() {
       </div>
 
       {activeTab === "calendario" && <CalendarioTab aula={aula} onUpdate={loadAula} />}
-      {activeTab === "discenti" && <DiscentiTab aula={aula} />}
+      {activeTab === "discenti" && <DiscentiTab aula={aula} onUpdate={loadAula} />}
       {activeTab === "docenti" && <DocentiTab aula={aula} onUpdate={loadAula} />}
       {activeTab === "modulistica" && <ModulisticaTab aula={aula} />}
       {activeTab === "gcal" && <GCalTab aula={aula} />}
@@ -254,12 +254,110 @@ function LezioniPanel({ aula, onUpdate }: any) {
   );
 }
 
-function DiscentiTab({ aula }: any) {
+function DiscentiTab({ aula, onUpdate }: any) {
+  const bloccata = aula.stato === "CONCLUSA";
+  const [query, setQuery] = useState("");
+  const [risultati, setRisultati] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState("");
+  const iscrittiIds = new Set((aula.iscrizioni || []).map((i: any) => i.discente.id));
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setRisultati([]);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(() => {
+      axios
+        .get(`/api/ricerca/discenti?q=${encodeURIComponent(query.trim())}`)
+        .then((res) => setRisultati(res.data.discenti || []))
+        .finally(() => setSearching(false));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const handleAdd = async (discenteId: string) => {
+    setError("");
+    try {
+      await axios.post(`/api/aule/${aula.id}/iscrizioni`, { discenteId });
+      setQuery("");
+      setRisultati([]);
+      onUpdate();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Errore aggiunta discente");
+    }
+  };
+
+  const handleRemove = async (discenteId: string) => {
+    setError("");
+    try {
+      await axios.delete(`/api/aule/${aula.id}/iscrizioni?discenteId=${discenteId}`);
+      onUpdate();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Errore rimozione discente");
+    }
+  };
+
+  const handleEditField = async (iscrizioneId: string, field: "cantiere" | "responsabile", value: string) => {
+    try {
+      await axios.patch(`/api/aule/${aula.id}/iscrizioni`, { iscrizioneId, [field]: value });
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Errore salvataggio");
+    } finally {
+      onUpdate();
+    }
+  };
+
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-4">
-        Discenti caricati in fase di creazione aula ({aula.iscrizioni?.length || 0} totali).
+        {(aula.iscrizioni || []).length} discenti iscritti.
       </p>
+
+      {error && (
+        <div className="mb-4 flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" /> {error}
+        </div>
+      )}
+
+      {bloccata ? (
+        <div className="mb-4 p-3 bg-secondary/50 text-muted-foreground rounded-md text-sm">
+          Aula conclusa: elenco discenti non più modificabile.
+        </div>
+      ) : (
+        <div className="mb-4 relative max-w-md">
+          <Input
+            placeholder="Cerca discente per nome, cognome o codice fiscale..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {query.trim().length >= 2 && (
+            <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-md shadow-md max-h-64 overflow-y-auto">
+              {searching && <div className="p-2 text-sm text-muted-foreground">Ricerca...</div>}
+              {!searching && risultati.length === 0 && (
+                <div className="p-2 text-sm text-muted-foreground">Nessun risultato</div>
+              )}
+              {!searching &&
+                risultati.map((d: any) => {
+                  const giaIscritto = iscrittiIds.has(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      disabled={giaIscritto}
+                      onClick={() => handleAdd(d.id)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed flex justify-between items-center"
+                    >
+                      <span>{d.cognome} {d.nome} {d.codiceFiscale ? `(${d.codiceFiscale})` : ""}</span>
+                      {giaIscritto && <span className="text-xs text-muted-foreground">già iscritto</span>}
+                    </button>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
 
       <Table>
         <TableHeader>
@@ -267,14 +365,46 @@ function DiscentiTab({ aula }: any) {
             <TableHead>Nome</TableHead>
             <TableHead>Cantiere</TableHead>
             <TableHead>Responsabile</TableHead>
+            {!bloccata && <TableHead></TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {aula.iscrizioni?.map((i: any) => (
             <TableRow key={i.id}>
               <TableCell className="font-medium">{i.discente.cognome} {i.discente.nome}</TableCell>
-              <TableCell>{i.cantiere || "-"}</TableCell>
-              <TableCell>{i.responsabile || "-"}</TableCell>
+              <TableCell>
+                {bloccata ? (
+                  i.cantiere || "-"
+                ) : (
+                  <Input
+                    defaultValue={i.cantiere || ""}
+                    onBlur={(e) => {
+                      if (e.target.value !== (i.cantiere || "")) handleEditField(i.id, "cantiere", e.target.value);
+                    }}
+                    className="h-8"
+                  />
+                )}
+              </TableCell>
+              <TableCell>
+                {bloccata ? (
+                  i.responsabile || "-"
+                ) : (
+                  <Input
+                    defaultValue={i.responsabile || ""}
+                    onBlur={(e) => {
+                      if (e.target.value !== (i.responsabile || "")) handleEditField(i.id, "responsabile", e.target.value);
+                    }}
+                    className="h-8"
+                  />
+                )}
+              </TableCell>
+              {!bloccata && (
+                <TableCell>
+                  <Button variant="ghost" size="sm" onClick={() => handleRemove(i.discente.id)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
