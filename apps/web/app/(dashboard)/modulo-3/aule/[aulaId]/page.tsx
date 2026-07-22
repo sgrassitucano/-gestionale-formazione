@@ -254,14 +254,35 @@ function LezioniPanel({ aula, onUpdate }: any) {
   );
 }
 
+type AddMode = "cerca" | "nuovo" | "importa";
+
 function DiscentiTab({ aula, onUpdate }: any) {
   const bloccata = aula.stato === "CONCLUSA";
   const [showAdd, setShowAdd] = useState(false);
+  const [addMode, setAddMode] = useState<AddMode>("cerca");
   const [query, setQuery] = useState("");
   const [risultati, setRisultati] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const iscrittiIds = new Set((aula.iscrizioni || []).map((i: any) => i.discente.id));
+
+  const [nuovoForm, setNuovoForm] = useState({
+    cognome: "",
+    nome: "",
+    codiceFiscale: "",
+    dataNascita: "",
+    luogoNascita: "",
+    email: "",
+    cellulare: "",
+    azienda: "",
+    cantiere: "",
+    responsabile: "",
+  });
+  const [savingNuovo, setSavingNuovo] = useState(false);
+
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -288,6 +309,63 @@ function DiscentiTab({ aula, onUpdate }: any) {
       onUpdate();
     } catch (err: any) {
       setError(err.response?.data?.error || "Errore aggiunta discente");
+    }
+  };
+
+  const handleCreaNuovo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSavingNuovo(true);
+    try {
+      await axios.post(`/api/aule/${aula.id}/iscrizioni`, {
+        nuovoDiscente: {
+          cognome: nuovoForm.cognome,
+          nome: nuovoForm.nome,
+          codiceFiscale: nuovoForm.codiceFiscale,
+          dataNascita: nuovoForm.dataNascita || undefined,
+          luogoNascita: nuovoForm.luogoNascita || undefined,
+          email: nuovoForm.email || undefined,
+          cellulare: nuovoForm.cellulare || undefined,
+          azienda: nuovoForm.azienda || undefined,
+        },
+        cantiere: nuovoForm.cantiere || undefined,
+        responsabile: nuovoForm.responsabile || undefined,
+      });
+      setNuovoForm({
+        cognome: "", nome: "", codiceFiscale: "", dataNascita: "", luogoNascita: "",
+        email: "", cellulare: "", azienda: "", cantiere: "", responsabile: "",
+      });
+      setShowAdd(false);
+      onUpdate();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Errore creazione discente");
+    } finally {
+      setSavingNuovo(false);
+    }
+  };
+
+  const handleImporta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) return;
+    setError("");
+    setInfo("");
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+      const res = await axios.post(`/api/aule/${aula.id}/iscrizioni/import`, formData);
+      setInfo(`${res.data.aggiunti} discenti aggiunti su ${res.data.totale} nel file.`);
+      setImportFile(null);
+      onUpdate();
+    } catch (err: any) {
+      const errs = err.response?.data?.errors;
+      setError(
+        errs
+          ? `Errori nel file: ${errs.slice(0, 3).map((e: any) => `riga ${e.line} (${e.field}): ${e.message}`).join("; ")}`
+          : err.response?.data?.error || "Errore importazione file"
+      );
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -323,6 +401,10 @@ function DiscentiTab({ aula, onUpdate }: any) {
         </div>
       )}
 
+      {info && (
+        <div className="mb-4 p-3 bg-success/10 text-success rounded-md text-sm">{info}</div>
+      )}
+
       {bloccata ? (
         <div className="mb-4 p-3 bg-secondary/50 text-muted-foreground rounded-md text-sm">
           Aula conclusa: elenco discenti non più modificabile.
@@ -339,38 +421,127 @@ function DiscentiTab({ aula, onUpdate }: any) {
           </Button>
 
           {showAdd && (
-            <div className="relative max-w-md">
-              <Input
-                autoFocus
-                placeholder="Cerca discente per nome, cognome o codice fiscale..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {query.trim().length >= 2 && (
-                <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-md shadow-md max-h-64 overflow-y-auto">
-                  {searching && <div className="p-2 text-sm text-muted-foreground">Ricerca...</div>}
-                  {!searching && risultati.length === 0 && (
-                    <div className="p-2 text-sm text-muted-foreground">Nessun risultato</div>
-                  )}
-                  {!searching &&
-                    risultati.map((d: any) => {
-                      const giaIscritto = iscrittiIds.has(d.id);
-                      return (
-                        <button
-                          key={d.id}
-                          type="button"
-                          disabled={giaIscritto}
-                          onClick={() => handleAdd(d.id)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed flex justify-between items-center"
-                        >
-                          <span>{d.cognome} {d.nome} {d.codiceFiscale ? `(${d.codiceFiscale})` : ""}</span>
-                          {giaIscritto && <span className="text-xs text-muted-foreground">già iscritto</span>}
-                        </button>
-                      );
-                    })}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex gap-1 mb-4 bg-secondary/60 p-1 rounded-lg w-fit">
+                  <Button size="sm" variant={addMode === "cerca" ? "default" : "ghost"} onClick={() => setAddMode("cerca")}>
+                    Cerca esistente
+                  </Button>
+                  <Button size="sm" variant={addMode === "nuovo" ? "default" : "ghost"} onClick={() => setAddMode("nuovo")}>
+                    Nuovo discente
+                  </Button>
+                  <Button size="sm" variant={addMode === "importa" ? "default" : "ghost"} onClick={() => setAddMode("importa")}>
+                    Importa XLS
+                  </Button>
                 </div>
-              )}
-            </div>
+
+                {addMode === "cerca" && (
+                  <div className="relative max-w-md">
+                    <Input
+                      autoFocus
+                      placeholder="Cerca discente per nome, cognome o codice fiscale..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                    {query.trim().length >= 2 && (
+                      <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-md shadow-md max-h-64 overflow-y-auto">
+                        {searching && <div className="p-2 text-sm text-muted-foreground">Ricerca...</div>}
+                        {!searching && risultati.length === 0 && (
+                          <div className="p-2 text-sm text-muted-foreground">Nessun risultato</div>
+                        )}
+                        {!searching &&
+                          risultati.map((d: any) => {
+                            const giaIscritto = iscrittiIds.has(d.id);
+                            return (
+                              <button
+                                key={d.id}
+                                type="button"
+                                disabled={giaIscritto}
+                                onClick={() => handleAdd(d.id)}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed flex justify-between items-center"
+                              >
+                                <span>{d.cognome} {d.nome} {d.codiceFiscale ? `(${d.codiceFiscale})` : ""}</span>
+                                {giaIscritto && <span className="text-xs text-muted-foreground">già iscritto</span>}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {addMode === "nuovo" && (
+                  <form onSubmit={handleCreaNuovo} className="grid grid-cols-2 gap-3 max-w-2xl">
+                    <div className="space-y-1.5">
+                      <Label>Cognome *</Label>
+                      <Input required value={nuovoForm.cognome} onChange={(e) => setNuovoForm({ ...nuovoForm, cognome: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nome *</Label>
+                      <Input required value={nuovoForm.nome} onChange={(e) => setNuovoForm({ ...nuovoForm, nome: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Codice Fiscale *</Label>
+                      <Input
+                        required
+                        value={nuovoForm.codiceFiscale}
+                        onChange={(e) => setNuovoForm({ ...nuovoForm, codiceFiscale: e.target.value.toUpperCase() })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data di nascita</Label>
+                      <Input type="date" value={nuovoForm.dataNascita} onChange={(e) => setNuovoForm({ ...nuovoForm, dataNascita: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Luogo di nascita</Label>
+                      <Input value={nuovoForm.luogoNascita} onChange={(e) => setNuovoForm({ ...nuovoForm, luogoNascita: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Azienda</Label>
+                      <Input value={nuovoForm.azienda} onChange={(e) => setNuovoForm({ ...nuovoForm, azienda: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Email</Label>
+                      <Input type="email" value={nuovoForm.email} onChange={(e) => setNuovoForm({ ...nuovoForm, email: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Cellulare</Label>
+                      <Input value={nuovoForm.cellulare} onChange={(e) => setNuovoForm({ ...nuovoForm, cellulare: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Cantiere</Label>
+                      <Input value={nuovoForm.cantiere} onChange={(e) => setNuovoForm({ ...nuovoForm, cantiere: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Responsabile</Label>
+                      <Input value={nuovoForm.responsabile} onChange={(e) => setNuovoForm({ ...nuovoForm, responsabile: e.target.value })} />
+                    </div>
+                    <div className="col-span-2">
+                      <Button type="submit" variant="success" disabled={savingNuovo}>
+                        {savingNuovo ? "Creazione..." : "Crea e Aggiungi all'Aula"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {addMode === "importa" && (
+                  <form onSubmit={handleImporta} className="flex gap-4 items-end flex-wrap max-w-2xl">
+                    <div className="space-y-1.5">
+                      <Label>File XLS discenti</Label>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                        className="block text-sm"
+                      />
+                    </div>
+                    <Button type="submit" variant="success" disabled={!importFile || importing}>
+                      {importing ? "Importazione..." : "Importa"}
+                    </Button>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
       )}

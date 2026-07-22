@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
+import { blindIndex } from "@gestionale/utils/encryption";
+import { validateCF, validateEmail } from "@gestionale/utils/validators";
 import { z } from "zod";
 
 // Limite massimo discenti per aula (CLAUDE.md / automazione_formazione_launcher:
@@ -9,11 +11,27 @@ import { z } from "zod";
 // nessun limite e poteva far crescere un'aula illimitatamente).
 const MAX_DISCENTI_PER_AULA = 35;
 
+const nuovoDiscenteSchema = z.object({
+  cognome: z.string().min(1),
+  nome: z.string().min(1),
+  codiceFiscale: z.string().refine(validateCF, "Codice fiscale non valido"),
+  dataNascita: z.string().optional(),
+  luogoNascita: z.string().optional(),
+  email: z.string().optional().refine((v) => !v || validateEmail(v), "Email non valida"),
+  cellulare: z.string().optional(),
+  azienda: z.string().optional(),
+});
+
+// Aggiunta di un discente ESISTENTE (via discenteId) oppure creazione al volo
+// di un discente nuovo (via nuovoDiscente) + iscrizione, in un'unica chiamata.
 const addIscrizioneSchema = z.object({
-  discenteId: z.string(),
+  discenteId: z.string().optional(),
+  nuovoDiscente: nuovoDiscenteSchema.optional(),
   cantiere: z.string().optional(),
   sottocantiere: z.string().optional(),
   responsabile: z.string().optional(),
+}).refine((d) => !!d.discenteId !== !!d.nuovoDiscente, {
+  message: "Specificare discenteId oppure nuovoDiscente, non entrambi",
 });
 
 const editIscrizioneSchema = z.object({
@@ -72,10 +90,53 @@ export async function POST(
         };
       }
 
+      let discenteId = data.discenteId;
+
+      if (data.nuovoDiscente) {
+        const nd = data.nuovoDiscente;
+        const cf = nd.codiceFiscale.toUpperCase().trim();
+        const cfHash = blindIndex(cf);
+
+        const esistente = await tx.discente.findUnique({ where: { codiceFiscaleHash: cfHash } });
+        if (esistente && !esistente.deletedAt) {
+          return {
+            status: 409 as const,
+            body: { error: `Esiste già un discente con questo codice fiscale (${esistente.cognome} ${esistente.nome}). Usa la ricerca per aggiungerlo.` },
+          };
+        }
+
+        const aziendaNome = (nd.azienda || "Default").trim();
+        let azienda = await tx.azienda.findFirst({
+          where: { ragioneSociale: { equals: aziendaNome, mode: "insensitive" }, deletedAt: null },
+        });
+        if (!azienda) {
+          azienda = await tx.azienda.create({
+            data: { ragioneSociale: aziendaNome, pIva: "UNKNOWN", codiceFiscale: "UNKNOWN" },
+          });
+        }
+
+        const savedDiscente = await tx.discente.upsert({
+          where: { codiceFiscaleHash: cfHash },
+          create: {
+            cognome: nd.cognome.trim(),
+            nome: nd.nome.trim(),
+            codiceFiscale: cf,
+            codiceFiscaleHash: cfHash,
+            dataNascita: nd.dataNascita ? new Date(nd.dataNascita) : undefined,
+            luogoNascita: nd.luogoNascita || undefined,
+            email: nd.email || undefined,
+            cellulare: nd.cellulare || undefined,
+            aziendaId: azienda.id,
+          } as any,
+          update: { deletedAt: null, aziendaId: azienda.id } as any,
+        });
+        discenteId = savedDiscente.id;
+      }
+
       const iscrizione = await tx.iscrizioneAula.create({
         data: {
           aulaId: params.aulaId,
-          discenteId: data.discenteId,
+          discenteId: discenteId!,
           cantiere: data.cantiere,
           sottocantiere: data.sottocantiere,
           responsabile: data.responsabile,
