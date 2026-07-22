@@ -14,9 +14,6 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = loginSchema.parse(body);
 
-    const k = process.env.ENCRYPTION_KEY || "";
-    console.log("DEBUG ENCRYPTION_KEY len=", k.length, "first6=", k.slice(0, 6), "last6=", k.slice(-6), "hasNewline=", /[\r\n]/.test(k), "hasSpace=", /\s/.test(k));
-
     const result = await loginUser(email, password);
 
     if (result.esito === "bloccato") {
