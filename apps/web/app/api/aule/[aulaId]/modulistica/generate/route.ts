@@ -18,7 +18,7 @@ function discenteRowData(discente: any) {
   };
 }
 
-export async function POST(
+async function handleGenerate(
   request: NextRequest,
   { params }: { params: { aulaId: string } }
 ) {
@@ -199,3 +199,6 @@ export async function POST(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export const GET = handleGenerate;
+export const POST = handleGenerate;
