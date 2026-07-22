@@ -256,6 +256,7 @@ function LezioniPanel({ aula, onUpdate }: any) {
 
 function DiscentiTab({ aula, onUpdate }: any) {
   const bloccata = aula.stato === "CONCLUSA";
+  const [showAdd, setShowAdd] = useState(false);
   const [query, setQuery] = useState("");
   const [risultati, setRisultati] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -283,6 +284,7 @@ function DiscentiTab({ aula, onUpdate }: any) {
       await axios.post(`/api/aule/${aula.id}/iscrizioni`, { discenteId });
       setQuery("");
       setRisultati([]);
+      setShowAdd(false);
       onUpdate();
     } catch (err: any) {
       setError(err.response?.data?.error || "Errore aggiunta discente");
@@ -326,34 +328,48 @@ function DiscentiTab({ aula, onUpdate }: any) {
           Aula conclusa: elenco discenti non più modificabile.
         </div>
       ) : (
-        <div className="mb-4 relative max-w-md">
-          <Input
-            placeholder="Cerca discente per nome, cognome o codice fiscale..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {query.trim().length >= 2 && (
-            <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-md shadow-md max-h-64 overflow-y-auto">
-              {searching && <div className="p-2 text-sm text-muted-foreground">Ricerca...</div>}
-              {!searching && risultati.length === 0 && (
-                <div className="p-2 text-sm text-muted-foreground">Nessun risultato</div>
+        <div className="mb-4">
+          <Button
+            onClick={() => setShowAdd(!showAdd)}
+            variant={showAdd ? "outline" : "default"}
+            className="mb-3"
+          >
+            {showAdd ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {showAdd ? "Annulla" : "Aggiungi Discente"}
+          </Button>
+
+          {showAdd && (
+            <div className="relative max-w-md">
+              <Input
+                autoFocus
+                placeholder="Cerca discente per nome, cognome o codice fiscale..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {query.trim().length >= 2 && (
+                <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-md shadow-md max-h-64 overflow-y-auto">
+                  {searching && <div className="p-2 text-sm text-muted-foreground">Ricerca...</div>}
+                  {!searching && risultati.length === 0 && (
+                    <div className="p-2 text-sm text-muted-foreground">Nessun risultato</div>
+                  )}
+                  {!searching &&
+                    risultati.map((d: any) => {
+                      const giaIscritto = iscrittiIds.has(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          disabled={giaIscritto}
+                          onClick={() => handleAdd(d.id)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed flex justify-between items-center"
+                        >
+                          <span>{d.cognome} {d.nome} {d.codiceFiscale ? `(${d.codiceFiscale})` : ""}</span>
+                          {giaIscritto && <span className="text-xs text-muted-foreground">già iscritto</span>}
+                        </button>
+                      );
+                    })}
+                </div>
               )}
-              {!searching &&
-                risultati.map((d: any) => {
-                  const giaIscritto = iscrittiIds.has(d.id);
-                  return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      disabled={giaIscritto}
-                      onClick={() => handleAdd(d.id)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed flex justify-between items-center"
-                    >
-                      <span>{d.cognome} {d.nome} {d.codiceFiscale ? `(${d.codiceFiscale})` : ""}</span>
-                      {giaIscritto && <span className="text-xs text-muted-foreground">già iscritto</span>}
-                    </button>
-                  );
-                })}
             </div>
           )}
         </div>
