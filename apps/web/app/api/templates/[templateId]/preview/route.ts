@@ -5,6 +5,7 @@ import { downloadFile, BUCKETS } from "@/lib/storage";
 import {
   generateDocxFromTemplate,
   generateHtmlFromTemplate,
+  fillXlsxTemplate,
   resolveFieldMappings,
 } from "@gestionale/utils/document-generator";
 
@@ -63,6 +64,17 @@ export async function GET(
         headers: {
           "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           "Content-Disposition": `attachment; filename="anteprima_${template.nome}.docx"`,
+        },
+      });
+    }
+
+    if (template.mimeType.includes("spreadsheetml")) {
+      const columnFields = template.campi.map((c) => ({ column: c.placeholder, sorgenteDato: c.sorgenteDato }));
+      const outputBuffer = await fillXlsxTemplate(templateBuffer, columnFields, [SAMPLE_CONTEXT]);
+      return new NextResponse(new Uint8Array(outputBuffer), {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="anteprima_${template.nome}.xlsx"`,
         },
       });
     }
