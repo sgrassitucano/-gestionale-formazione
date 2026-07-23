@@ -69,7 +69,7 @@ export async function PUT(
         };
       }
 
-      const allowedFields = ["luogoId", "stato", "dataInizio", "dataFine"];
+      const allowedFields = ["luogoId", "stato", "dataInizio", "dataFine", "nome", "corsoCodec", "modalita"];
       const data: any = {};
       for (const key of allowedFields) {
         if (body[key] !== undefined) {

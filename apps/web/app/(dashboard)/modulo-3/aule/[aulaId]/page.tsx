@@ -15,6 +15,9 @@ import {
   Link2,
   Download,
   AlertCircle,
+  Pencil,
+  Trash2,
+  Check,
 } from "lucide-react";
 import { AulaCalendar } from "@/components/calendar/AulaCalendar";
 import { ChiusuraAulaPanel } from "@/components/forms/ChiusuraAulaPanel";
@@ -604,6 +607,8 @@ function DocentiTab({ aula, onUpdate }: any) {
   const [docenti, setDocenti] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ docenteId: "", oreEffettiveDocenza: 0, trasferAcosto: 0 });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ oreEffettiveDocenza: 0, trasferAcosto: 0 });
 
   useEffect(() => {
     axios.get("/api/docenti").then((res) => setDocenti(res.data.docenti || []));
@@ -614,6 +619,23 @@ function DocentiTab({ aula, onUpdate }: any) {
     await axios.post(`/api/aule/${aula.id}/docenti`, form);
     setForm({ docenteId: "", oreEffettiveDocenza: 0, trasferAcosto: 0 });
     setShowAdd(false);
+    onUpdate();
+  };
+
+  const startEdit = (dl: any) => {
+    setEditingId(dl.id);
+    setEditForm({ oreEffettiveDocenza: Number(dl.oreEffettiveDocenza), trasferAcosto: Number(dl.trasferAcosto) });
+  };
+
+  const saveEdit = async (docenteLezioneId: string) => {
+    await axios.put(`/api/aule/${aula.id}/docenti`, { docenteLezioneId, ...editForm });
+    setEditingId(null);
+    onUpdate();
+  };
+
+  const handleDelete = async (docenteLezioneId: string) => {
+    if (!confirm("Rimuovere questo docente dall'aula?")) return;
+    await axios.delete(`/api/aule/${aula.id}/docenti?id=${docenteLezioneId}`);
     onUpdate();
   };
 
@@ -663,20 +685,69 @@ function DocentiTab({ aula, onUpdate }: any) {
             <TableHead>Tariffa/h</TableHead>
             <TableHead>Trasferta</TableHead>
             <TableHead>Costo Totale</TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {aula.docentilezioni?.map((dl: any) => (
-            <TableRow key={dl.id}>
-              <TableCell className="font-medium">{dl.docente.cognome} {dl.docente.nome}</TableCell>
-              <TableCell className="font-data tabular-nums">{Number(dl.oreEffettiveDocenza)}</TableCell>
-              <TableCell className="font-data tabular-nums">€ {Number(dl.docente.tariffaOraria)}</TableCell>
-              <TableCell className="font-data tabular-nums">€ {Number(dl.trasferAcosto)}</TableCell>
-              <TableCell className="font-semibold font-data tabular-nums">
-                € {(Number(dl.oreEffettiveDocenza) * Number(dl.docente.tariffaOraria) + Number(dl.trasferAcosto)).toFixed(2)}
-              </TableCell>
-            </TableRow>
-          ))}
+          {aula.docentilezioni?.map((dl: any) => {
+            const editing = editingId === dl.id;
+            return (
+              <TableRow key={dl.id}>
+                <TableCell className="font-medium">{dl.docente.cognome} {dl.docente.nome}</TableCell>
+                <TableCell className="font-data tabular-nums">
+                  {editing ? (
+                    <Input
+                      type="number"
+                      value={editForm.oreEffettiveDocenza}
+                      onChange={(e) => setEditForm({ ...editForm, oreEffettiveDocenza: parseFloat(e.target.value) })}
+                      className="w-20 h-8"
+                    />
+                  ) : (
+                    Number(dl.oreEffettiveDocenza)
+                  )}
+                </TableCell>
+                <TableCell className="font-data tabular-nums">€ {Number(dl.docente.tariffaOraria)}</TableCell>
+                <TableCell className="font-data tabular-nums">
+                  {editing ? (
+                    <Input
+                      type="number"
+                      value={editForm.trasferAcosto}
+                      onChange={(e) => setEditForm({ ...editForm, trasferAcosto: parseFloat(e.target.value) })}
+                      className="w-24 h-8"
+                    />
+                  ) : (
+                    `€ ${Number(dl.trasferAcosto)}`
+                  )}
+                </TableCell>
+                <TableCell className="font-semibold font-data tabular-nums">
+                  € {(Number(dl.oreEffettiveDocenza) * Number(dl.docente.tariffaOraria) + Number(dl.trasferAcosto)).toFixed(2)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1 justify-end">
+                    {editing ? (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => saveEdit(dl.id)} title="Salva">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => setEditingId(null)} title="Annulla">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600 hover:text-sky-700 hover:bg-sky-50" onClick={() => startEdit(dl)} title="Modifica ore/trasferta">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(dl.id)} title="Rimuovi dall'aula">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

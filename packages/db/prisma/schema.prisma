@@ -273,6 +273,7 @@ model Luogo {
 
 model Aula {
   id              String   @id @default(cuid())
+  nome            String?  // etichetta identificativa libera, per distinguere aule a colpo d'occhio
   corsoCodec      String
   corso           CatalogoCorso @relation(fields: [corsoCodec], references: [codice], onDelete: Restrict)
   modalita        ModalitaErogazione

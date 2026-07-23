@@ -53,6 +53,60 @@ export async function POST(
   }
 }
 
+const updateDocenteLezioneSchema = z.object({
+  docenteLezioneId: z.string(),
+  oreEffettiveDocenza: z.number().min(0),
+  trasferAcosto: z.number().min(0).default(0),
+});
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { aulaId: string } }
+) {
+  const user = getSessionUserFromRequest(request);
+  if (!user || !("SEGRETERIA" === user.ruolo || "SUPERADMIN" === user.ruolo)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const data = updateDocenteLezioneSchema.parse(body);
+
+    const result = await withUserContext(user, async (tx) => {
+      const aula = await tx.aula.findUnique({ where: { id: params.aulaId } });
+      if (!aula || aula.deletedAt) {
+        return { status: 404 as const, body: { error: "Aula non trovata" } };
+      }
+      if (aula.stato === "CONCLUSA") {
+        return { status: 409 as const, body: { error: "Aula conclusa: assegnazione docenti non più modificabile" } };
+      }
+
+      const esistente = await tx.docenteLezione.findUnique({ where: { id: data.docenteLezioneId } });
+      if (!esistente || esistente.aulaId !== params.aulaId) {
+        return { status: 404 as const, body: { error: "Assegnazione non trovata per questa aula" } };
+      }
+
+      const docenteLezione = await tx.docenteLezione.update({
+        where: { id: data.docenteLezioneId },
+        data: {
+          oreEffettiveDocenza: data.oreEffettiveDocenza,
+          trasferAcosto: data.trasferAcosto,
+        },
+        include: { docente: true },
+      });
+
+      return { status: 200 as const, body: { success: true, docenteLezione } };
+    });
+
+    return NextResponse.json(result.body, { status: result.status });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { aulaId: string } }
