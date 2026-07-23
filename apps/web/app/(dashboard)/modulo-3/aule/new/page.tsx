@@ -36,7 +36,7 @@ export default function NuovaAulaPage() {
   // Step 2
   const [file, setFile] = useState<File | null>(null);
   const [nomeAula, setNomeAula] = useState("");
-  const [limitePerAula, setLimitePerAula] = useState(35);
+  const [limitePerAula, setLimitePerAula] = useState(""); // stringa: vuoto = nessun limite
 
   // Step 3
   const [luogoId, setLuogoId] = useState("");
@@ -131,7 +131,7 @@ export default function NuovaAulaPage() {
           dataInizio,
           costoAffitto,
           docenti: docentiAssegnati.filter((d) => d.docenteId),
-          limitePerAula,
+          limitePerAula: limitePerAula.trim() ? parseInt(limitePerAula, 10) : undefined,
         })
       );
 
@@ -246,12 +246,12 @@ export default function NuovaAulaPage() {
                   <Input
                     type="number"
                     min={1}
-                    max={35}
+                    placeholder="Vuoto = nessun limite"
                     value={limitePerAula}
-                    onChange={(e) => setLimitePerAula(Math.min(35, Math.max(1, parseInt(e.target.value) || 1)))}
-                    className="w-32"
+                    onChange={(e) => setLimitePerAula(e.target.value)}
+                    className="w-40"
                   />
-                  <p className="text-xs text-muted-foreground">Massimo 35 (vincolo organizzativo).</p>
+                  <p className="text-xs text-muted-foreground">Vuoto = nessun limite, tutti in un'unica aula.</p>
                 </div>
               </div>
             </div>

@@ -20,7 +20,7 @@ const createAulaMetaSchema = z.object({
   dataInizio: z.string(),
   costoAffitto: z.number().min(0).default(0),
   docenti: z.array(docenteAssignSchema).default([]),
-  limitePerAula: z.number().int().min(1).max(35).default(35),
+  limitePerAula: z.number().int().min(1).optional(), // assente = nessun limite, un'unica aula
 });
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -87,13 +87,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Split in più aule se il caricamento supera il limite scelto
-    // dall'utente (max 35, vincolo organizzativo — vedi
-    // automazione_formazione_launcher che applica la stessa regola sugli
-    // import massivi). Ogni gruppo diventa un'aula separata, nominata
-    // [nome]_01, [nome]_02... se ne servono più di una.
+    // dall'utente (nessun tetto imposto dal sistema — decide l'utente,
+    // vedi discussione: "il campo può avere qualsiasi numero, decido io
+    // il limite max"). Campo assente = nessun limite, tutto in un'aula
+    // sola. Ogni gruppo diventa un'aula separata, nominata [nome]_01,
+    // [nome]_02... se ne servono più di una.
     const gruppi = chunk(
       validationResult.valid.map((discente, i) => ({ discente, rowData: parseResult.rows[i] })),
-      meta.limitePerAula
+      meta.limitePerAula ?? (validationResult.valid.length || 1)
     );
 
     const aule = await withUserContext(
