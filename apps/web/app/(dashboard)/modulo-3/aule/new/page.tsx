@@ -35,6 +35,8 @@ export default function NuovaAulaPage() {
 
   // Step 2
   const [file, setFile] = useState<File | null>(null);
+  const [nomeAula, setNomeAula] = useState("");
+  const [limitePerAula, setLimitePerAula] = useState(35);
 
   // Step 3
   const [luogoId, setLuogoId] = useState("");
@@ -122,20 +124,31 @@ export default function NuovaAulaPage() {
       formData.append(
         "meta",
         JSON.stringify({
+          nome: nomeAula.trim() || undefined,
           corsoCodec,
           modalita,
           luogoId,
           dataInizio,
           costoAffitto,
           docenti: docentiAssegnati.filter((d) => d.docenteId),
+          limitePerAula,
         })
       );
 
       const res = await axios.post("/api/aule", formData);
-      router.push(`/modulo-3/aule/${res.data.aula.id}`);
+      const auleCreate = res.data.aule || [res.data.aula];
+      if (auleCreate.length > 1) {
+        router.push(`/modulo-3/aule`);
+      } else {
+        router.push(`/modulo-3/aule/${auleCreate[0].id}`);
+      }
     } catch (err: any) {
       if (err.response?.data?.errors) {
-        setError(err.response.data.errors.map((e: any) => `Riga ${e.line}: ${e.message}`).join(", "));
+        setError(
+          err.response.data.errors
+            .map((e: any) => (typeof e === "string" ? e : `Riga ${e.line}: ${e.message}`))
+            .join(", ")
+        );
       } else {
         setError(err.response?.data?.error || "Errore creazione aula");
       }
@@ -214,6 +227,32 @@ export default function NuovaAulaPage() {
                   <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">{file ? file.name : "Clicca per selezionare XLS"}</p>
                 </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Nome Aula</Label>
+                  <Input
+                    value={nomeAula}
+                    onChange={(e) => setNomeAula(e.target.value)}
+                    placeholder="Es. Privacy GDPR (opzionale)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se il file supera il limite sotto, verranno create più aule: {nomeAula || "nome"}_01, {nomeAula || "nome"}_02...
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Limite max discenti per aula</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={35}
+                    value={limitePerAula}
+                    onChange={(e) => setLimitePerAula(Math.min(35, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="w-32"
+                  />
+                  <p className="text-xs text-muted-foreground">Massimo 35 (vincolo organizzativo).</p>
+                </div>
               </div>
             </div>
           )}
