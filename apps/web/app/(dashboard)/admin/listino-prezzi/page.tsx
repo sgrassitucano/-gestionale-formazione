@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { Pencil, Trash2, Check, X, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,9 @@ export default function ListinoPrezziPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ costo: 0, costoPiattaformaPerDiscente: "" });
+  const [ricerca, setRicerca] = useState("");
+  const [filtroTipoErogazione, setFiltroTipoErogazione] = useState("");
+  const [filtroTipoCorso, setFiltroTipoCorso] = useState("");
 
   useEffect(() => {
     load();
@@ -116,6 +119,57 @@ export default function ListinoPrezziPage() {
         </CardContent>
       </Card>
 
+      <Card className="mb-4">
+        <CardContent className="p-4 flex gap-4 items-end flex-wrap">
+          <div className="space-y-1.5 flex-1 min-w-[220px]">
+            <Label>Cerca corso</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={ricerca}
+                onChange={(e) => setRicerca(e.target.value)}
+                placeholder="Nome corso..."
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Tipo Erogazione</Label>
+            <select
+              value={filtroTipoErogazione}
+              onChange={(e) => setFiltroTipoErogazione(e.target.value)}
+              className="flex h-10 w-56 rounded-md border border-input bg-card px-3 py-2 text-sm"
+            >
+              <option value="">Tutti</option>
+              <option value="AULA_FAD">Presenza / FAD Sincrona</option>
+              <option value="E_LEARNING">FAD Asincrona</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Tipo Corso</Label>
+            <select
+              value={filtroTipoCorso}
+              onChange={(e) => setFiltroTipoCorso(e.target.value)}
+              className="flex h-10 w-44 rounded-md border border-input bg-card px-3 py-2 text-sm"
+            >
+              <option value="">Tutti</option>
+              <option value="FORMAZIONE">Formazione</option>
+              <option value="AGGIORNAMENTO">Aggiornamento</option>
+            </select>
+          </div>
+          {(ricerca || filtroTipoErogazione || filtroTipoCorso) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => { setRicerca(""); setFiltroTipoErogazione(""); setFiltroTipoCorso(""); }}
+            >
+              <X className="h-3.5 w-3.5" /> Pulisci filtri
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -127,7 +181,14 @@ export default function ListinoPrezziPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {listini.map((l) => {
+          {listini
+            .filter((l) => {
+              if (ricerca && !l.corso.titolo.toLowerCase().includes(ricerca.toLowerCase())) return false;
+              if (filtroTipoErogazione && l.tipoErogazione !== filtroTipoErogazione) return false;
+              if (filtroTipoCorso && l.corso.tipo !== filtroTipoCorso) return false;
+              return true;
+            })
+            .map((l) => {
             const editing = editingId === l.id;
             return (
               <TableRow key={l.id}>
