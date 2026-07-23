@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, X, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Plus, X, ChevronDown, ChevronUp, Trash2, Pencil, Check } from "lucide-react";
 import { AuleSubNav } from "@/components/layout/AuleSubNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,15 @@ export default function AnagraficaCorsiPage() {
     modalitaConsentite: [] as string[],
   });
   const [newMapping, setNewMapping] = useState({ templateId: "", modalita: "" });
+  const [editingCodice, setEditingCodice] = useState<string | null>(null);
+  const [editCorso, setEditCorso] = useState({
+    titolo: "",
+    tipo: "FORMAZIONE",
+    oreAula: 8,
+    oreElearning: 0,
+    validitaAnni: 1,
+    modalitaConsentite: [] as string[],
+  });
 
   useEffect(() => {
     loadCorsi();
@@ -86,6 +95,44 @@ export default function AnagraficaCorsiPage() {
   const handleRemoveMapping = async (codice: string, mappingId: string) => {
     await axios.delete(`/api/corsi/${codice}/mappings?id=${mappingId}`);
     loadMappings(codice);
+  };
+
+  const startEditCorso = (corso: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCodice(corso.codice);
+    setEditCorso({
+      titolo: corso.titolo,
+      tipo: corso.tipo,
+      oreAula: corso.oreAula,
+      oreElearning: corso.oreElearning,
+      validitaAnni: corso.validitaAnni,
+      modalitaConsentite: corso.modalitaConsentite || [],
+    });
+  };
+
+  const cancelEditCorso = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCodice(null);
+  };
+
+  const saveEditCorso = async (codice: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await axios.put(`/api/corsi/${codice}`, {
+      titolo: editCorso.titolo,
+      oreAula: editCorso.oreAula,
+      oreElearning: editCorso.oreElearning,
+      validitaAnni: editCorso.validitaAnni,
+      modalitaConsentite: editCorso.modalitaConsentite,
+    });
+    setEditingCodice(null);
+    loadCorsi();
+  };
+
+  const handleDeleteCorso = async (codice: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Eliminare questo corso? Rimarrà nello storico delle aule già create.")) return;
+    await axios.delete(`/api/corsi/${codice}`);
+    loadCorsi();
   };
 
   if (loading) return <div className="text-muted-foreground">Loading...</div>;
@@ -178,23 +225,111 @@ export default function AnagraficaCorsiPage() {
             <TableHead>Ore E-learning</TableHead>
             <TableHead>Modalità</TableHead>
             <TableHead></TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {corsi.map((corso) => (
+          {corsi.map((corso) => {
+            const editing = editingCodice === corso.codice;
+            return (
             <>
-              <TableRow key={corso.codice} className="cursor-pointer" onClick={() => toggleExpand(corso.codice)}>
+              <TableRow key={corso.codice} className="cursor-pointer" onClick={() => !editing && toggleExpand(corso.codice)}>
                 <TableCell className="font-mono text-xs font-data tabular-nums">{corso.codice}</TableCell>
-                <TableCell className="font-medium">{corso.titolo}</TableCell>
+                <TableCell className="font-medium">
+                  {editing ? (
+                    <Input
+                      value={editCorso.titolo}
+                      onChange={(e) => setEditCorso({ ...editCorso, titolo: e.target.value })}
+                      className="h-8"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    corso.titolo
+                  )}
+                </TableCell>
                 <TableCell><Badge variant={corso.tipo === "FORMAZIONE" ? "default" : "warning"}>{corso.tipo}</Badge></TableCell>
-                <TableCell className="font-data tabular-nums">{corso.oreAula}h</TableCell>
-                <TableCell className="font-data tabular-nums">{corso.oreElearning}h</TableCell>
+                <TableCell className="font-data tabular-nums">
+                  {editing ? (
+                    <Input
+                      type="number"
+                      value={editCorso.oreAula}
+                      onChange={(e) => setEditCorso({ ...editCorso, oreAula: parseInt(e.target.value) })}
+                      className="h-8 w-20"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    `${corso.oreAula}h`
+                  )}
+                </TableCell>
+                <TableCell className="font-data tabular-nums">
+                  {editing ? (
+                    <Input
+                      type="number"
+                      value={editCorso.oreElearning}
+                      onChange={(e) => setEditCorso({ ...editCorso, oreElearning: parseInt(e.target.value) })}
+                      className="h-8 w-20"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    `${corso.oreElearning}h`
+                  )}
+                </TableCell>
                 <TableCell>
-                  <div className="flex gap-1 flex-wrap">
-                    {(corso.modalitaConsentite || []).length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                    {(corso.modalitaConsentite || []).map((m: string) => (
-                      <Badge key={m} variant="secondary" className="text-xs">{MODALITA_LABELS[m]}</Badge>
-                    ))}
+                  {editing ? (
+                    <div className="flex gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                      {MODALITA_OPTIONS.map(([value, label]) => {
+                        const checked = editCorso.modalitaConsentite.includes(value);
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() =>
+                              setEditCorso({
+                                ...editCorso,
+                                modalitaConsentite: checked
+                                  ? editCorso.modalitaConsentite.filter((m) => m !== value)
+                                  : [...editCorso.modalitaConsentite, value],
+                              })
+                            }
+                            className={`px-2 py-1 rounded-md border text-xs font-medium transition-colors ${
+                              checked ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-secondary"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex gap-1 flex-wrap">
+                      {(corso.modalitaConsentite || []).length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                      {(corso.modalitaConsentite || []).map((m: string) => (
+                        <Badge key={m} variant="secondary" className="text-xs">{MODALITA_LABELS[m]}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1 justify-end">
+                    {editing ? (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={(e) => saveEditCorso(corso.codice, e)} title="Salva">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={cancelEditCorso} title="Annulla">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600 hover:text-sky-700 hover:bg-sky-50" onClick={(e) => startEditCorso(corso, e)} title="Modifica corso">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => handleDeleteCorso(corso.codice, e)} title="Elimina corso">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-primary flex items-center gap-1 text-sm">
@@ -204,7 +339,7 @@ export default function AnagraficaCorsiPage() {
               </TableRow>
               {expandedCorso === corso.codice && (
                 <TableRow className="bg-secondary/30">
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={8}>
                     <div className="p-3 space-y-3">
                       <p className="text-xs font-semibold text-muted-foreground uppercase">Template mappati</p>
                       {(mappings[corso.codice] || []).length === 0 && (
@@ -247,7 +382,8 @@ export default function AnagraficaCorsiPage() {
                 </TableRow>
               )}
             </>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
     </div>

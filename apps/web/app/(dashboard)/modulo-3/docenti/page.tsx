@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Check } from "lucide-react";
 import { AuleSubNav } from "@/components/layout/AuleSubNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
+const EMPTY_FORM = { nome: "", cognome: "", email: "", tariffaOraria: 0 };
+
 export default function DocentiPage() {
   const [docenti, setDocenti] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: "", cognome: "", email: "", tariffaOraria: 0 });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
     load();
@@ -32,8 +36,25 @@ export default function DocentiPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await axios.post("/api/docenti", form);
-    setForm({ nome: "", cognome: "", email: "", tariffaOraria: 0 });
+    setForm(EMPTY_FORM);
     setShowForm(false);
+    load();
+  };
+
+  const startEdit = (d: any) => {
+    setEditingId(d.id);
+    setEditForm({ nome: d.nome, cognome: d.cognome, email: d.email, tariffaOraria: Number(d.tariffaOraria) });
+  };
+
+  const saveEdit = async (id: string) => {
+    await axios.put(`/api/docenti/${id}`, editForm);
+    setEditingId(null);
+    load();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Eliminare questo docente?")) return;
+    await axios.delete(`/api/docenti/${id}`);
     load();
   };
 
@@ -85,16 +106,64 @@ export default function DocentiPage() {
             <TableHead>Nome</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Tariffa/h</TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {docenti.map((d) => (
-            <TableRow key={d.id}>
-              <TableCell className="font-medium">{d.cognome} {d.nome}</TableCell>
-              <TableCell>{d.email}</TableCell>
-              <TableCell className="font-data tabular-nums">€ {Number(d.tariffaOraria).toFixed(2)}</TableCell>
-            </TableRow>
-          ))}
+          {docenti.map((d) => {
+            const editing = editingId === d.id;
+            return (
+              <TableRow key={d.id}>
+                <TableCell className="font-medium">
+                  {editing ? (
+                    <div className="flex gap-2">
+                      <Input value={editForm.cognome} onChange={(e) => setEditForm({ ...editForm, cognome: e.target.value })} className="h-8 w-28" placeholder="Cognome" />
+                      <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} className="h-8 w-28" placeholder="Nome" />
+                    </div>
+                  ) : (
+                    `${d.cognome} ${d.nome}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editing ? (
+                    <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="h-8 w-48" />
+                  ) : (
+                    d.email
+                  )}
+                </TableCell>
+                <TableCell className="font-data tabular-nums">
+                  {editing ? (
+                    <Input type="number" step="0.01" value={editForm.tariffaOraria} onChange={(e) => setEditForm({ ...editForm, tariffaOraria: parseFloat(e.target.value) })} className="h-8 w-24" />
+                  ) : (
+                    `€ ${Number(d.tariffaOraria).toFixed(2)}`
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1 justify-end">
+                    {editing ? (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => saveEdit(d.id)} title="Salva">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => setEditingId(null)} title="Annulla">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600 hover:text-sky-700 hover:bg-sky-50" onClick={() => startEdit(d)} title="Modifica">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(d.id)} title="Elimina">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
