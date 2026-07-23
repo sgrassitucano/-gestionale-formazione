@@ -141,7 +141,11 @@ export async function PUT(
           update: {}, // immutabile: se esiste già (non dovrebbe, la state machine impedisce di richiudere), non lo tocchiamo
         });
 
-        const distribuzione = calculateCentriCosto(costoTotale, aulaCompleta.iscrizioni);
+        // Centri di Costo = distribuzione del RICAVO fatturato al cliente
+        // per cantiere (non il costo interno docenti/piattaforma/affitto):
+        // è il pannello che dice al cliente "quanto ti abbiamo fatturato
+        // per cantiere", vedi CLAUDE.md formula Modulo 7.
+        const distribuzione = calculateCentriCosto(ricavo, aulaCompleta.iscrizioni);
         await tx.centroCostoSnapshot.deleteMany({ where: { aulaId: params.aulaId } });
         if (distribuzione.length > 0) {
           await tx.centroCostoSnapshot.createMany({

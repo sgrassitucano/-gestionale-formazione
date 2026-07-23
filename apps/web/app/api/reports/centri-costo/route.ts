@@ -3,7 +3,7 @@ import { getSessionUserFromRequest } from "@/lib/session";
 import { hasRuolo, RUOLI_PREFATTURAZIONE_CENTRI_COSTO } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
 import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
-import { calculateCostoDocenti, calculateCostoPiattaforma } from "@gestionale/utils/bilancio-calculator";
+import { calculateRicavo } from "@gestionale/utils/bilancio-calculator";
 import { exportToXlsx } from "@gestionale/utils/xlsx-exporter";
 
 function monthRange(mese: string) {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         corso: { include: { listiniPrezzi: true } },
-        iscrizioni: { where: { deletedAt: null } },
+        iscrizioni: { where: { deletedAt: null }, include: { discente: true } },
         docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
         centriCosto: true,
       },
@@ -60,6 +60,12 @@ export async function GET(request: NextRequest) {
   // Preferisce lo snapshot immutabile (vedi CentroCostoSnapshot in
   // schema.prisma); fallback al calcolo live solo per aule concluse prima
   // dell'introduzione dello snapshot e non ancora backfillate.
+  //
+  // IMPORTANTE: il Centro di Costo distribuisce il RICAVO fatturato al
+  // cliente (es. Coop. Morelli) per cantiere — es. 35€/discente x nr
+  // lavoratori sul cantiere — NON il costo interno (docenti/affitto/
+  // piattaforma). Quello è un altro numero (bilancio/margine), pannello
+  // diverso: qui serve "quanto fatturiamo a chi".
   for (const a of aule) {
     if (a.centriCosto.length > 0) {
       for (const entry of a.centriCosto) {
@@ -76,22 +82,11 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const costoDocenti = calculateCostoDocenti(
-      a.docentilezioni.map((dl) => ({
-        oreEffettiveDocenza: Number(dl.oreEffettiveDocenza),
-        tariffaOraria: Number(dl.docente.tariffaOraria),
-        trasferAcosto: Number(dl.trasferAcosto),
-      }))
-    );
     const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
     const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
-    const costoPiattaforma = calculateCostoPiattaforma(
-      listino?.costoPiattaformaPerDiscente != null ? Number(listino.costoPiattaformaPerDiscente) : null,
-      a.iscrizioni.length
-    );
-    const costoTotale = costoDocenti + Number(a.costoAffitto) + costoPiattaforma;
+    const ricavo = calculateRicavo(tipoErogazione as any, listino ? Number(listino.costo) : 0, a.iscrizioni.length);
 
-    const distribuzione = calculateCentriCosto(costoTotale, a.iscrizioni);
+    const distribuzione = calculateCentriCosto(ricavo, a.iscrizioni);
     for (const entry of distribuzione) {
       report.push({
         aulaId: a.id,
@@ -105,6 +100,23 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Elenco lavoratori per cantiere+sottocantiere (indipendente da
+  // snapshot/live: la composizione delle persone non cambia in base a
+  // come è stato calcolato il ricavo). Chiave = "cantiere|sottocantiere".
+  const lavoratoriPerChiave = new Map<string, Array<{ cognome: string; nome: string; corso: string }>>();
+  for (const a of aule) {
+    for (const isc of a.iscrizioni) {
+      const cantiere = isc.cantiere || "Non Assegnato";
+      const chiave = `${cantiere}|${isc.sottocantiere || "N/A"}`;
+      if (!lavoratoriPerChiave.has(chiave)) lavoratoriPerChiave.set(chiave, []);
+      lavoratoriPerChiave.get(chiave)!.push({
+        cognome: isc.discente.cognome,
+        nome: isc.discente.nome,
+        corso: a.corso.titolo,
+      });
+    }
+  }
+
   if (format === "xlsx") {
     const buffer = exportToXlsx(
       report.map((r) => ({
@@ -112,7 +124,7 @@ export async function GET(request: NextRequest) {
         Cantiere: r.cantiere,
         Sottocantiere: r.sottocantiere || "",
         Responsabile: r.responsabile || "",
-        "Costo Attribuito (€)": r.costoAttribuito,
+        "Ricavo Fatturato (€)": r.costoAttribuito,
         Data: r.dataInizio?.toISOString().split("T")[0] || "",
       })),
       "Centri Costo"
@@ -145,7 +157,10 @@ export async function GET(request: NextRequest) {
   const drillDown = Array.from(byCantiere.values()).map((g) => ({
     cantiere: g.cantiere,
     totale: g.totale,
-    sottocantieri: Array.from(g.sottocantieri.values()),
+    sottocantieri: Array.from(g.sottocantieri.values()).map((s) => ({
+      ...s,
+      lavoratori: lavoratoriPerChiave.get(`${g.cantiere}|${s.nome}`) || [],
+    })),
   }));
 
   return NextResponse.json({ success: true, drillDown });

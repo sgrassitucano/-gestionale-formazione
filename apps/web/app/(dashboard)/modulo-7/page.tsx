@@ -131,7 +131,7 @@ export default function Modulo7Page() {
           <TableHeader>
             <TableRow>
               <TableHead>Cantiere</TableHead>
-              <TableHead>Costo Totale</TableHead>
+              <TableHead>Ricavo Fatturato</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -152,9 +152,16 @@ export default function Modulo7Page() {
                 </TableRow>
                 {expandedCantiere === c.cantiere &&
                   c.sottocantieri.map((sub: any) => (
-                    <TableRow key={`${c.cantiere}-${sub.nome}`} className="bg-secondary/30">
+                    <TableRow key={`${c.cantiere}-${sub.nome}`} className="bg-secondary/30 align-top">
                       <TableCell className="pl-10 text-muted-foreground text-sm">
-                        {sub.nome} {sub.responsabile ? `(Resp: ${sub.responsabile})` : ""}
+                        <div>{sub.nome} {sub.responsabile ? `(Resp: ${sub.responsabile})` : ""}</div>
+                        {sub.lavoratori?.length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5 text-xs text-muted-foreground/80">
+                            {sub.lavoratori.map((l: any, i: number) => (
+                              <li key={i}>{l.cognome} {l.nome} — <span className="italic">{l.corso}</span></li>
+                            ))}
+                          </ul>
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm font-data tabular-nums">€ {sub.totale.toFixed(2)}</TableCell>
                       <TableCell></TableCell>
