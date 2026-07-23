@@ -91,7 +91,7 @@ export function validateDiscentiRows(
         // Excel date serial
         dataNascita = excelDateToDate(row.datanascita);
       } else if (typeof row.datanascita === "string") {
-        dataNascita = new Date(row.datanascita);
+        dataNascita = parseDataItaliana(row.datanascita);
       }
 
       if (!dataNascita || isNaN(dataNascita.getTime())) {
@@ -136,4 +136,21 @@ export function validateDiscentiRows(
 function excelDateToDate(excelDate: number): Date {
   const date = new Date((excelDate - 25569) * 86400 * 1000);
   return date;
+}
+
+// `new Date("23/12/1990")` interpreta MM/DD/YYYY (US): fallisce per giorni
+// >12, e per giorni <=12 inverte silenziosamente giorno/mese senza errore
+// — bug reale, i file italiani (xlsx export gestionali esterni) sono
+// sempre GG/MM/AAAA. Parsing esplicito invece di affidarsi al costruttore
+// Date ambiguo.
+function parseDataItaliana(value: string): Date | null {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, giorno, mese, anno] = match;
+    const date = new Date(Number(anno), Number(mese) - 1, Number(giorno));
+    return isNaN(date.getTime()) ? null : date;
+  }
+  // Fallback per altri formati (es. ISO YYYY-MM-DD) dove non c'è ambiguità
+  const fallback = new Date(value);
+  return isNaN(fallback.getTime()) ? null : fallback;
 }

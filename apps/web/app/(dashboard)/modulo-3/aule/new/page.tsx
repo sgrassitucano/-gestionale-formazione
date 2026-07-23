@@ -204,8 +204,9 @@ export default function NuovaAulaPage() {
           {step === 1 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Carica XLS con i discenti dell'aula. Colonne richieste: cognome, nome, codiceFiscale, email, cellulare,
-                dataNascita, azienda. Opzionali: cantiere, sottocantiere, responsabile.
+                Carica XLS con i discenti dell'aula. Colonne richieste: cognome, nome, codiceFiscale (anche "codice fiscale").
+                Opzionali: email/mail, cellulare, dataNascita/"data nascita", azienda (default "Default" se assente), cantiere, sottocantiere, responsabile.
+                Altre colonne nel file (tipo corso, stato, ecc.) vengono ignorate — corso e modalità si scelgono qui nel wizard.
               </p>
               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                 <input type="file" accept=".xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] || null)} className="hidden" id="wizard-file" />
