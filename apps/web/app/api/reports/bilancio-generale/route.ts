@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { hasRuolo, RUOLI_REPORT_KPI } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
-import { calculateRicavo, calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
+import { calculateRicavo, calculateCostoDocenti, calculateCostoPiattaforma } from "@gestionale/utils/bilancio-calculator";
 
 // Conta quanti mesi (inclusivi) intercorrono tra due date allo stesso "anno-mese"
 function countMonthsOverlap(voceStart: Date, voceEnd: Date | null, rangeStart: Date, rangeEnd: Date): number {
@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
   let entrateAule = 0;
   let usciteDocenti = 0;
   let usciteAffitto = 0;
+  let uscitePiattaforma = 0;
 
   for (const aula of aule) {
     // Preferisce lo snapshot immutabile (vedi BilancioAula in
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
       entrateAule += Number(aula.bilancio.ricavo);
       usciteDocenti += Number(aula.bilancio.costoDocenti);
       usciteAffitto += Number(aula.bilancio.costoAffitto);
+      uscitePiattaforma += Number(aula.bilancio.costoPiattaforma);
       continue;
     }
     const tipoErogazione = aula.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
@@ -83,12 +85,17 @@ export async function GET(request: NextRequest) {
       }))
     );
     usciteAffitto += Number(aula.costoAffitto);
+    uscitePiattaforma += calculateCostoPiattaforma(
+      listino?.costoPiattaformaPerDiscente != null ? Number(listino.costoPiattaformaPerDiscente) : null,
+      aula.iscrizioni.length
+    );
   }
 
   const categorie: Record<string, { entrate: number; uscite: number }> = {
     Aule: { entrate: entrateAule, uscite: 0 },
     Docenti: { entrate: 0, uscite: usciteDocenti },
     "Affitto Locali": { entrate: 0, uscite: usciteAffitto },
+    "Piattaforma FAD/EBAFOS": { entrate: 0, uscite: uscitePiattaforma },
   };
 
   const vociDettaglio: any[] = [];

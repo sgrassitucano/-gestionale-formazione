@@ -7,6 +7,7 @@ const upsertListinoSchema = z.object({
   corsoCodec: z.string(),
   tipoErogazione: z.enum(["AULA_FAD", "E_LEARNING"]),
   costo: z.number().min(0),
+  costoPiattaformaPerDiscente: z.number().min(0).optional().nullable(),
 });
 
 export async function GET(request: NextRequest) {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
           },
         },
         create: data as any,
-        update: { costo: data.costo },
+        update: { costo: data.costo, costoPiattaformaPerDiscente: data.costoPiattaformaPerDiscente ?? null },
       })
     );
 

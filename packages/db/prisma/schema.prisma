@@ -197,7 +197,8 @@ model ListinoPrezzi {
   corsoCodec      String
   corso           CatalogoCorso @relation(fields: [corsoCodec], references: [codice], onDelete: Cascade)
   tipoErogazione  TipoErogazione
-  costo           Decimal  @db.Decimal(10, 2) // per aula (AULA_FAD) o per discente (E_LEARNING)
+  costo           Decimal  @db.Decimal(10, 2) // ricavo: per aula (AULA_FAD) o per discente (E_LEARNING)
+  costoPiattaformaPerDiscente Decimal? @db.Decimal(10, 2) // costo esterno fisso (FAD/EBAFOS) per corsista, non calcolabile da dati interni: va impostato una volta qui invece che a mano ogni chiusura aula
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   deletedAt       DateTime? // soft-delete
@@ -326,6 +327,7 @@ model BilancioAula {
   ricavo          Decimal  @db.Decimal(10, 2)
   costoDocenti    Decimal  @db.Decimal(10, 2)
   costoAffitto    Decimal  @db.Decimal(10, 2)
+  costoPiattaforma Decimal @db.Decimal(10, 2) @default(0) // costo esterno FAD/EBAFOS per discente (da ListinoPrezzi.costoPiattaformaPerDiscente x discentiCount)
   costoTotale     Decimal  @db.Decimal(10, 2)
   margine         Decimal  @db.Decimal(10, 2)
   marginePct      Decimal  @db.Decimal(6, 2)

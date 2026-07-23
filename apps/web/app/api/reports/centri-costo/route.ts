@@ -3,7 +3,7 @@ import { getSessionUserFromRequest } from "@/lib/session";
 import { hasRuolo, RUOLI_PREFATTURAZIONE_CENTRI_COSTO } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
 import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
-import { calculateCostoDocenti } from "@gestionale/utils/bilancio-calculator";
+import { calculateCostoDocenti, calculateCostoPiattaforma } from "@gestionale/utils/bilancio-calculator";
 import { exportToXlsx } from "@gestionale/utils/xlsx-exporter";
 
 function monthRange(mese: string) {
@@ -20,18 +20,26 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const mese = searchParams.get("mese");
   const format = searchParams.get("format");
+  const aulaId = searchParams.get("aulaId");
+  const tipoCorso = searchParams.get("tipoCorso"); // FORMAZIONE | AGGIORNAMENTO
 
   const where: any = { deletedAt: null, stato: "CONCLUSA" };
   if (mese) {
     const { start, end } = monthRange(mese);
     where.dataInizio = { gte: start, lte: end };
   }
+  if (aulaId) {
+    where.id = aulaId;
+  }
+  if (tipoCorso) {
+    where.corso = { tipo: tipoCorso };
+  }
 
   const aule = await withUserContext(user, (tx) =>
     tx.aula.findMany({
       where,
       include: {
-        corso: true,
+        corso: { include: { listiniPrezzi: true } },
         iscrizioni: { where: { deletedAt: null } },
         docentilezioni: { where: { deletedAt: null, dataFine: null }, include: { docente: true } },
         centriCosto: true,
@@ -75,7 +83,13 @@ export async function GET(request: NextRequest) {
         trasferAcosto: Number(dl.trasferAcosto),
       }))
     );
-    const costoTotale = costoDocenti + Number(a.costoAffitto);
+    const tipoErogazione = a.modalita === "FAD_ASINCRONA" ? "E_LEARNING" : "AULA_FAD";
+    const listino = a.corso.listiniPrezzi.find((l) => l.tipoErogazione === tipoErogazione);
+    const costoPiattaforma = calculateCostoPiattaforma(
+      listino?.costoPiattaformaPerDiscente != null ? Number(listino.costoPiattaformaPerDiscente) : null,
+      a.iscrizioni.length
+    );
+    const costoTotale = costoDocenti + Number(a.costoAffitto) + costoPiattaforma;
 
     const distribuzione = calculateCentriCosto(costoTotale, a.iscrizioni);
     for (const entry of distribuzione) {

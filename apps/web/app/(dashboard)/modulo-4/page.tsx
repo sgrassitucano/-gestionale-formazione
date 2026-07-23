@@ -171,7 +171,7 @@ export default function Modulo4Page() {
   if (loading) return <div className="text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <h1 className="text-2xl font-bold text-foreground mb-1">Modulistica</h1>
       <p className="text-sm text-muted-foreground mb-6">Template dinamici e generazione documenti</p>
 

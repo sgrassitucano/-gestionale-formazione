@@ -14,20 +14,40 @@ function currentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const TIPO_CORSO_LABELS: Record<string, string> = {
+  FORMAZIONE: "Formazione",
+  AGGIORNAMENTO: "Aggiornamento",
+};
+
 export default function Modulo7Page() {
   const [mese, setMese] = useState(currentMonth());
+  const [aulaId, setAulaId] = useState("");
+  const [tipoCorso, setTipoCorso] = useState("");
+  const [aule, setAule] = useState<any[]>([]);
   const [drillDown, setDrillDown] = useState<any[]>([]);
   const [expandedCantiere, setExpandedCantiere] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    axios.get("/api/aule", { params: { stato: "CONCLUSA" } }).then((res) => setAule(res.data.aule || []));
+  }, []);
+
+  useEffect(() => {
     loadCentriCosto();
-  }, [mese]);
+  }, [mese, aulaId, tipoCorso]);
+
+  const filtriAttivi = () => {
+    const params: Record<string, string> = {};
+    if (mese) params.mese = mese;
+    if (aulaId) params.aulaId = aulaId;
+    if (tipoCorso) params.tipoCorso = tipoCorso;
+    return params;
+  };
 
   const loadCentriCosto = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/reports/centri-costo", { params: { mese } });
+      const res = await axios.get("/api/reports/centri-costo", { params: filtriAttivi() });
       setDrillDown(res.data.drillDown || []);
     } finally {
       setLoading(false);
@@ -35,22 +55,50 @@ export default function Modulo7Page() {
   };
 
   const handleExport = () => {
-    const params = new URLSearchParams({ mese, format: "xlsx" });
+    const params = new URLSearchParams({ ...filtriAttivi(), format: "xlsx" });
     window.open(`/api/reports/centri-costo?${params.toString()}`, "_blank");
   };
 
   const totale = drillDown.reduce((sum, c) => sum + c.totale, 0);
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <h1 className="text-2xl font-bold text-foreground mb-1">Centri di Costo</h1>
       <p className="text-sm text-muted-foreground mb-6">Distribuzione costi per cantiere, aggregata per mese</p>
 
       <Card className="mb-6">
-        <CardContent className="p-4 flex gap-4 items-end">
+        <CardContent className="p-4 flex gap-4 items-end flex-wrap">
           <div className="space-y-1.5">
             <Label>Mese</Label>
             <Input type="month" value={mese} onChange={(e) => setMese(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Aula</Label>
+            <select
+              value={aulaId}
+              onChange={(e) => setAulaId(e.target.value)}
+              className="flex h-10 w-56 rounded-md border border-input bg-card px-3 py-2 text-sm"
+            >
+              <option value="">Tutte le aule</option>
+              {aule.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.nome ? `${a.nome} — ` : ""}{a.corso?.titolo}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Tipo Corso</Label>
+            <select
+              value={tipoCorso}
+              onChange={(e) => setTipoCorso(e.target.value)}
+              className="flex h-10 w-44 rounded-md border border-input bg-card px-3 py-2 text-sm"
+            >
+              <option value="">Tutti</option>
+              {Object.entries(TIPO_CORSO_LABELS).map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
+              ))}
+            </select>
           </div>
           <Button variant="success" onClick={handleExport}><Download className="h-4 w-4" /> Export XLS</Button>
         </CardContent>
@@ -73,7 +121,7 @@ export default function Modulo7Page() {
       ) : drillDown.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground text-sm">
-            Nessun dato disponibile per questo mese.
+            Nessun dato disponibile per i filtri selezionati.
           </CardContent>
         </Card>
       ) : (

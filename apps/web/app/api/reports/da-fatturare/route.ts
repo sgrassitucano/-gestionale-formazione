@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { hasRuolo, RUOLI_PREFATTURAZIONE_CENTRI_COSTO } from "@/lib/permessi";
+import { calculateCostoPiattaforma } from "@gestionale/utils/bilancio-calculator";
 
 function monthRange(mese: string) {
   const [year, month] = mese.split("-").map(Number);
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
           costoAtteso: {
             docenti: Number(a.bilancio.costoDocenti),
             affitto: Number(a.bilancio.costoAffitto),
+            piattaforma: Number(a.bilancio.costoPiattaforma),
             totale: Number(a.bilancio.costoTotale),
           },
         };
@@ -64,6 +66,10 @@ export async function GET(request: NextRequest) {
       const costoDocenti = a.docentilezioni.reduce(
         (sum, dl) => sum + Number(dl.oreEffettiveDocenza) * Number(dl.docente.tariffaOraria) + Number(dl.trasferAcosto),
         0
+      );
+      const costoPiattaforma = calculateCostoPiattaforma(
+        listino?.costoPiattaformaPerDiscente != null ? Number(listino.costoPiattaformaPerDiscente) : null,
+        a.iscrizioni.length
       );
 
       return {
@@ -77,7 +83,8 @@ export async function GET(request: NextRequest) {
         costoAtteso: {
           docenti: costoDocenti,
           affitto: Number(a.costoAffitto),
-          totale: costoDocenti + Number(a.costoAffitto),
+          piattaforma: costoPiattaforma,
+          totale: costoDocenti + Number(a.costoAffitto) + costoPiattaforma,
         },
       };
     });

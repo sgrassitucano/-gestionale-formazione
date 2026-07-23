@@ -68,7 +68,7 @@ export default function UtentiPage() {
   if (loading) return <div className="text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Gestione Utenti</h1>

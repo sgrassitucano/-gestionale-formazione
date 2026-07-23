@@ -91,7 +91,7 @@ export default function AulaDetailPage() {
   const activeTab = tab ?? TABS[0].key;
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full">
       {gcalMessage && (
         <div className="mb-4 flex items-center gap-2 p-3 bg-primary/10 text-primary rounded-md text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />

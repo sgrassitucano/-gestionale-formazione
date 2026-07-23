@@ -39,7 +39,7 @@ export default function Modulo6Page() {
   const [tab, setTab] = useState<"bilancio" | "kpi" | "bilancio-generale">("bilancio");
 
   return (
-    <div className="max-w-6xl">
+    <div className="w-full">
       <h1 className="text-2xl font-bold text-foreground mb-1">Report</h1>
       <p className="text-sm text-muted-foreground mb-6">Bilancio aule e dashboard KPI</p>
 

@@ -26,6 +26,13 @@ export function calculateCostoDocenti(
   );
 }
 
+export function calculateCostoPiattaforma(
+  costoPiattaformaPerDiscente: number | null | undefined,
+  discentiCount: number
+): number {
+  return (costoPiattaformaPerDiscente || 0) * discentiCount;
+}
+
 export function calculateBilancio(ricavo: number, costoTotale: number): BilancioResult {
   const margine = ricavo - costoTotale;
   const marginePct = ricavo > 0 ? (margine / ricavo) * 100 : 0;

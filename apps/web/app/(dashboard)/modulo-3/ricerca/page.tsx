@@ -53,7 +53,7 @@ export default function RicercaPage() {
   };
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full">
       <h1 className="text-2xl font-bold text-foreground mb-1">Aule</h1>
       <p className="text-sm text-muted-foreground mb-4">Anagrafica corsi, docenti e gestione aule</p>
       <AuleSubNav />

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/session";
 import { hasRuolo, RUOLI_REPORT_KPI } from "@/lib/permessi";
 import { withUserContext } from "@gestionale/db/context";
-import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
+import { calculateRicavo, calculateCostoDocenti, calculateCostoPiattaforma, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
 import { buildRevenueTrend } from "@gestionale/utils/kpi-calculator";
 
 export async function GET(request: NextRequest) {
@@ -72,7 +72,11 @@ export async function GET(request: NextRequest) {
           trasferAcosto: Number(dl.trasferAcosto),
         }))
       );
-      costoTotaleAula = costoDocenti + Number(a.costoAffitto);
+      const costoPiattaforma = calculateCostoPiattaforma(
+        listino?.costoPiattaformaPerDiscente != null ? Number(listino.costoPiattaformaPerDiscente) : null,
+        a.iscrizioni.length
+      );
+      costoTotaleAula = costoDocenti + Number(a.costoAffitto) + costoPiattaforma;
       bilancio = calculateBilancio(ricavo, costoTotaleAula);
     }
 

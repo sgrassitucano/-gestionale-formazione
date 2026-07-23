@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withUserContext } from "@gestionale/db/context";
 import { getSessionUserFromRequest } from "@/lib/session";
-import { calculateRicavo, calculateCostoDocenti, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
+import { calculateRicavo, calculateCostoDocenti, calculateCostoPiattaforma, calculateBilancio } from "@gestionale/utils/bilancio-calculator";
 import { calculateCentriCosto } from "@gestionale/utils/centri-costo-calculator";
 
 export async function GET(
@@ -116,7 +116,11 @@ export async function PUT(
           }))
         );
         const costoAffitto = Number(aulaCompleta.costoAffitto);
-        const costoTotale = costoDocenti + costoAffitto;
+        const costoPiattaforma = calculateCostoPiattaforma(
+          listino?.costoPiattaformaPerDiscente != null ? Number(listino.costoPiattaformaPerDiscente) : null,
+          aulaCompleta.iscrizioni.length
+        );
+        const costoTotale = costoDocenti + costoAffitto + costoPiattaforma;
         const bilancio = calculateBilancio(ricavo, costoTotale);
 
         await tx.bilancioAula.upsert({
@@ -129,6 +133,7 @@ export async function PUT(
             ricavo: bilancio.ricavo,
             costoDocenti,
             costoAffitto,
+            costoPiattaforma,
             costoTotale: bilancio.costoTotale,
             margine: bilancio.margine,
             marginePct: bilancio.marginePct,

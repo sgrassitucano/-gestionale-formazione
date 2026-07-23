@@ -43,7 +43,7 @@ export default function Modulo5Page() {
     (data?.aggregato?.importoDaFatturare || 0);
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full">
       <h1 className="text-2xl font-bold text-foreground mb-1">Prefatturazione</h1>
       <p className="text-sm text-muted-foreground mb-6">Cosa fatturare questo mese, per aula (data aula)</p>
 
