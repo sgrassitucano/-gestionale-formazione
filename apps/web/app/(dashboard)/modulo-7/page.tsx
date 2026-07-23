@@ -2,17 +2,12 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Download, ChevronDown, ChevronUp, Landmark } from "lucide-react";
+import { Download, ChevronDown, ChevronUp, Landmark, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-
-function currentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
 
 const TIPO_CORSO_LABELS: Record<string, string> = {
   FORMAZIONE: "Formazione",
@@ -20,7 +15,7 @@ const TIPO_CORSO_LABELS: Record<string, string> = {
 };
 
 export default function Modulo7Page() {
-  const [mese, setMese] = useState(currentMonth());
+  const [mese, setMese] = useState(""); // vuoto = tutti i periodi
   const [aulaId, setAulaId] = useState("");
   const [tipoCorso, setTipoCorso] = useState("");
   const [aule, setAule] = useState<any[]>([]);
@@ -70,7 +65,14 @@ export default function Modulo7Page() {
         <CardContent className="p-4 flex gap-4 items-end flex-wrap">
           <div className="space-y-1.5">
             <Label>Mese</Label>
-            <Input type="month" value={mese} onChange={(e) => setMese(e.target.value)} />
+            <div className="flex items-center gap-1">
+              <Input type="month" value={mese} onChange={(e) => setMese(e.target.value)} placeholder="Tutti i periodi" />
+              {mese && (
+                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => setMese("")} title="Rimuovi filtro mese (tutti i periodi)">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>Aula</Label>
